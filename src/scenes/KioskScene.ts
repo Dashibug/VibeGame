@@ -15,6 +15,7 @@ export class KioskScene extends Phaser.Scene {
   private correctRoutes = 0;
   private shiftTimeLeft = SHIFT_DURATION_SECONDS;
 
+  private caseFileText!: Phaser.GameObjects.Text;
   private routingBrief!: Phaser.GameObjects.Text;
   private passengerCardText!: Phaser.GameObjects.Text;
   private passengerIndicatorsText!: Phaser.GameObjects.Text;
@@ -134,65 +135,80 @@ export class KioskScene extends Phaser.Scene {
     const layout = this.getLayout();
     const { width, height } = layout;
 
-    const coldSkyTop = 0x050911;
-    const coldSkyBottom = 0x0d1c34;
-    const exteriorPanel = 0x0b1526;
-    const interiorPanel = 0x151e2e;
-    const interiorAccent = 0x2e3f58;
-    const warmGlow = 0xe6b36b;
+    const coldSkyTop = 0x04080d;
+    const coldSkyBottom = 0x0a121a;
+    const exteriorPanel = 0x0d141b;
+    const interiorPanel = 0x11181f;
+    const interiorAccent = 0x252f37;
+    const warmGlow = 0xd59b58;
 
     const sky = this.add.graphics();
     sky.fillGradientStyle(coldSkyTop, coldSkyTop, coldSkyBottom, coldSkyBottom, 1);
     sky.fillRect(0, 0, width, height);
 
-    this.add.ellipse(width - 220, 96, 260, 120, 0x7cb7ff, 0.12);
-    this.add.ellipse(width - 220, 96, 190, 80, 0xc2ddff, 0.07);
-    this.add.ellipse(layout.sidePad + layout.leftPanelW / 2, 148, 210, 90, 0x9dc7ff, 0.06);
+    this.add.ellipse(width - 240, 104, 320, 120, 0x7dd7d0, 0.05);
+    this.add.ellipse(width - 240, 104, 220, 82, 0xcfe1d6, 0.04);
+    this.add.ellipse(layout.sidePad + layout.leftPanelW / 2, 148, 220, 100, 0x8fd8d7, 0.04);
+    this.add.ellipse(width * 0.68, height * 0.76, 320, 120, 0xe3ab63, 0.04);
+
+    const worldGrid = this.add.graphics();
+    worldGrid.lineStyle(1, 0x6ad2d2, 0.05);
+    for (let x = 24; x < width; x += 62) {
+      worldGrid.lineBetween(x, 0, x, height);
+    }
+    for (let y = 20; y < height; y += 28) {
+      worldGrid.lineBetween(0, y, width, y);
+    }
 
     const vignette = this.add.graphics();
-    vignette.fillStyle(0x000000, 0.18);
-    vignette.fillRect(0, 0, width, 44);
-    vignette.fillRect(0, height - 44, width, 44);
-    vignette.fillRect(0, 0, 22, height);
-    vignette.fillRect(width - 22, 0, 22, height);
+    vignette.fillStyle(0x000000, 0.34);
+    vignette.fillRect(0, 0, width, 52);
+    vignette.fillRect(0, height - 52, width, 52);
+    vignette.fillRect(0, 0, 28, height);
+    vignette.fillRect(width - 28, 0, 28, height);
 
-    this.add.rectangle(width / 2, layout.topBarH / 2, width, layout.topBarH, 0x10233f, 0.62);
-    this.add.rectangle(width / 2, height - layout.bottomBarH / 2, width, layout.bottomBarH, 0x1a2438, 0.95);
+    this.add.rectangle(width / 2, height / 2, width - 14, height - 14, 0x081015, 0.34).setStrokeStyle(2, 0x28353d, 0.7);
+    this.add.rectangle(width / 2, height / 2, width - 34, height - 34, 0x000000, 0).setStrokeStyle(1, 0x45545d, 0.45);
+
+    this.add.rectangle(width / 2, layout.topBarH / 2, width, layout.topBarH, 0x111a21, 0.88);
+    this.add.rectangle(width / 2, height - layout.bottomBarH / 2, width, layout.bottomBarH, 0x131b22, 0.94);
+    this.add.rectangle(width / 2, layout.topBarH - 4, width - 42, 2, 0x8b6a43, 0.3);
+    this.add.rectangle(width / 2, height - layout.bottomBarH + 4, width - 42, 2, 0x7cd4d3, 0.16);
 
     this.add
       .rectangle(layout.leftPanelX, layout.panelY, layout.leftPanelW, layout.panelH, exteriorPanel, 0.93)
-      .setStrokeStyle(2, 0x35557f, 0.8);
+      .setStrokeStyle(2, 0x394751, 0.9);
     this.add
       .rectangle(layout.rightPanelX, layout.panelY, layout.rightPanelW, layout.panelH, interiorPanel, 0.94)
-      .setStrokeStyle(2, 0x40597e, 0.9);
+      .setStrokeStyle(2, 0x4b5b63, 0.95);
 
     const dividerX = layout.sidePad + layout.leftPanelW + layout.gap / 2;
     const leftPanelLeft = layout.sidePad;
     const leftPanelRight = layout.sidePad + layout.leftPanelW;
-    this.add.rectangle(dividerX, layout.panelY, 6, layout.panelH, 0x3a5378, 0.95);
-    this.add.rectangle(dividerX + 3, layout.panelY, 2, layout.panelH, 0x8cb0e0, 0.23);
+    this.add.rectangle(dividerX, layout.panelY, 6, layout.panelH, 0x3a342e, 0.95);
+    this.add.rectangle(dividerX + 3, layout.panelY, 2, layout.panelH, 0xd6a96d, 0.16);
 
     const windowX = layout.leftPanelX;
     const windowY = layout.topBarH + 82;
     const windowW = layout.leftPanelW - 56;
     const windowH = 128;
 
-    this.add.rectangle(windowX, windowY, windowW + 8, windowH + 8, 0x0b1628, 0.58);
-    this.add.rectangle(windowX, windowY, windowW, windowH, 0x15293f, 0.96).setStrokeStyle(3, 0x8db5e9, 0.48);
-    this.add.rectangle(windowX, windowY, windowW - 28, windowH - 28, 0xa3d0ff, 0.07);
-    this.add.rectangle(windowX, windowY + 60, windowW - 34, 18, 0x25374f, 0.97).setStrokeStyle(1, 0x7393bd, 0.58);
-    this.add.rectangle(windowX, windowY + 72, windowW - 18, 6, 0x0a1628, 0.5);
-    this.add.rectangle(windowX, windowY - windowH / 2 + 10, windowW - 16, 10, 0xddeeff, 0.08);
+    this.add.rectangle(windowX, windowY, windowW + 12, windowH + 12, 0x0b1015, 0.82).setStrokeStyle(2, 0x38444c, 0.7);
+    this.add.rectangle(windowX, windowY, windowW, windowH, 0x12222d, 0.96).setStrokeStyle(2, 0x69757e, 0.52);
+    this.add.rectangle(windowX, windowY, windowW - 28, windowH - 28, 0x9fdde2, 0.04);
+    this.add.rectangle(windowX, windowY + 60, windowW - 34, 18, 0x26333d, 0.97).setStrokeStyle(1, 0x7f8d95, 0.48);
+    this.add.rectangle(windowX, windowY + 72, windowW - 18, 6, 0x090d11, 0.58);
+    this.add.rectangle(windowX, windowY - windowH / 2 + 10, windowW - 16, 10, 0xddeeff, 0.04);
 
     this.add.rectangle(layout.rightPanelX, windowY + 87, layout.rightPanelW - 20, 16, interiorAccent, 0.96);
     this.add.rectangle(layout.rightPanelX, windowY + 95, layout.rightPanelW - 20, 5, 0x0f1727, 0.45);
-    this.add.rectangle(dividerX + 1, windowY + 76, 24, 36, 0x25374f, 0.96).setStrokeStyle(1, 0x7393bd, 0.45);
+    this.add.rectangle(dividerX + 1, windowY + 76, 24, 36, 0x2c3138, 0.96).setStrokeStyle(1, 0xc49862, 0.4);
 
-    this.add.ellipse(layout.rightPanelX + 110, layout.topBarH + 76, 220, 78, warmGlow, 0.08);
-    this.add.ellipse(layout.rightPanelX + 110, layout.topBarH + 76, 140, 48, warmGlow, 0.12);
+    this.add.ellipse(layout.rightPanelX + 110, layout.topBarH + 76, 240, 86, warmGlow, 0.06);
+    this.add.ellipse(layout.rightPanelX + 110, layout.topBarH + 76, 148, 52, warmGlow, 0.1);
 
     const snow = this.add.graphics();
-    snow.fillStyle(0xb8d7ff, 0.11);
+    snow.fillStyle(0xb8d7ff, 0.06);
     for (let i = 0; i < 22; i += 1) {
       const x = layout.sidePad + 16 + i * 12;
       const y = layout.topBarH + 22 + (i % 7) * 26;
@@ -225,7 +241,7 @@ export class KioskScene extends Phaser.Scene {
     this.add.text(windowX, windowY - 62, t('kiosk.windowTitle'), {
       fontFamily: 'Georgia, serif',
       fontSize: '20px',
-      color: '#cde0ff'
+      color: '#d2c8b0'
     }).setOrigin(0.5);
 
     const coat = this.add.rectangle(0, 28, 94, 104, 0x2f445f, 0.94).setStrokeStyle(2, 0xafc7e4, 0.42);
@@ -258,8 +274,8 @@ export class KioskScene extends Phaser.Scene {
 
     const neonX = leftPanelLeft + 70;
     const neonY = layout.topBarH + 40;
-    const neonHalo = this.add.ellipse(neonX, neonY, 150, 42, 0x4fd7ff, 0.1);
-    const neonSign = this.add.rectangle(neonX, neonY, 86, 16, 0x68e3ff, 0.28).setStrokeStyle(1, 0xbef2ff, 0.4);
+    const neonHalo = this.add.ellipse(neonX, neonY, 150, 42, 0x4fd7ff, 0.08);
+    const neonSign = this.add.rectangle(neonX, neonY, 86, 16, 0x68e3ff, 0.18).setStrokeStyle(1, 0xbef2ff, 0.22);
     this.time.addEvent({
       delay: 1800,
       loop: true,
@@ -323,46 +339,59 @@ export class KioskScene extends Phaser.Scene {
     });
 
     this.add
-      .rectangle(layout.leftPanelX, layout.topBarH + 278, layout.leftPanelW - 20, 200, 0x08101d, 0.28)
-      .setStrokeStyle(1, 0x2f4b73, 0.35);
+      .rectangle(layout.leftPanelX, layout.topBarH + 278, layout.leftPanelW - 20, 200, 0x0d1116, 0.36)
+      .setStrokeStyle(1, 0x344047, 0.38);
 
     this.add
-      .rectangle(layout.rightPanelX, layout.topBarH + 252, layout.rightPanelW - 22, 214, 0x11243e, 0.24)
-      .setStrokeStyle(1, 0x3f5a83, 0.35);
-
-    this.add
-      .rectangle(layout.rightPanelX, layout.topBarH + 62, layout.rightPanelW - 20, 72, 0x152844, 0.86)
-      .setStrokeStyle(1, 0x59779f, 0.65);
+      .rectangle(layout.rightPanelX, layout.topBarH + 62, layout.rightPanelW - 20, 72, 0x171c21, 0.92)
+      .setStrokeStyle(1, 0x5f666c, 0.65);
+    this.add.rectangle(layout.rightPanelX, layout.topBarH + 62, layout.rightPanelW - 84, 2, 0xd0a168, 0.28);
+    this.add.rectangle(layout.rightPanelX - layout.rightPanelW / 2 + 92, layout.topBarH + 62, 120, 14, 0x9ee8e4, 0.05);
     this.add.text(layout.rightPanelX, layout.topBarH + 32, t('kiosk.consoleTitle'), {
       fontFamily: 'Georgia, serif',
       fontSize: '23px',
-      color: '#dbe9ff'
+      color: '#d4c7ad'
     }).setOrigin(0.5);
+
+    this.add.rectangle(layout.rightPanelX + layout.rightPanelW / 2 - 88, layout.topBarH + 62, 18, 18, 0x6d1e1f, 0.85).setStrokeStyle(1, 0xff7d67, 0.5);
+    this.add.rectangle(layout.rightPanelX + layout.rightPanelW / 2 - 62, layout.topBarH + 62, 18, 18, 0x6d1e1f, 0.85).setStrokeStyle(1, 0xff7d67, 0.5);
+    this.add.rectangle(layout.rightPanelX + layout.rightPanelW / 2 - 28, layout.topBarH + 62, 44, 18, 0x28565d, 0.8).setStrokeStyle(1, 0x85e5e0, 0.5);
+    this.add.rectangle(layout.rightPanelX + layout.rightPanelW / 2 + 18, layout.topBarH + 62, 14, 4, 0xe5a55d, 0.88);
+    this.add.triangle(layout.rightPanelX + layout.rightPanelW / 2 + 48, layout.topBarH + 62, 0, 10, 10, -10, 20, 10, 0x7a221d, 0.95)
+      .setStrokeStyle(1, 0xff8b67, 0.55);
 
     this.add.text(layout.sidePad + 12, height - layout.bottomBarH + 12, t('kiosk.arrivalSide'), {
       fontFamily: 'Verdana, sans-serif',
       fontSize: '13px',
-      color: '#7595bc'
+      color: '#7c8f92'
     });
     this.add.text(layout.sidePad + layout.leftPanelW + layout.gap + 12, height - layout.bottomBarH + 12, t('kiosk.controlSide'), {
       fontFamily: 'Verdana, sans-serif',
       fontSize: '13px',
-      color: '#7595bc'
+      color: '#d0a168'
     });
   }
 
   private createUI(): void {
     const layout = this.getLayout();
     const rightPanelLeft = layout.sidePad + layout.leftPanelW + layout.gap;
-    const rightTextX = rightPanelLeft + 30;
-    const rightTextWidth = layout.rightPanelW - 60;
     const sectionCenterX = rightPanelLeft + layout.rightPanelW / 2;
     const sectionWidth = layout.rightPanelW - 24;
+    const mainGap = 18;
+    const leftColumnWidth = Math.max(170, Math.min(220, sectionWidth * 0.24));
+    const rightColumnWidth = Math.max(170, Math.min(220, sectionWidth * 0.24));
+    const centerColumnWidth = sectionWidth - leftColumnWidth - rightColumnWidth - mainGap * 2;
+    const columnsTopY = layout.topBarH + 206;
+    const columnHeight = 328;
+    const leftColumnX = rightPanelLeft + 22 + leftColumnWidth / 2;
+    const centerColumnX = leftColumnX + leftColumnWidth / 2 + mainGap + centerColumnWidth / 2;
+    const rightColumnX = centerColumnX + centerColumnWidth / 2 + mainGap + rightColumnWidth / 2;
+    const alertY = layout.topBarH + 118;
 
     this.hudText = this.add.text(layout.sidePad, 16, '', {
-      fontFamily: 'Verdana, sans-serif',
-      fontSize: '22px',
-      color: '#eef4ff'
+      fontFamily: 'Courier New, monospace',
+      fontSize: '20px',
+      color: '#d6c8ab'
     });
 
     const dialogueX = layout.sidePad + layout.leftPanelW / 2;
@@ -371,108 +400,159 @@ export class KioskScene extends Phaser.Scene {
     const dialogueH = 176;
 
     this.dialoguePanel = this.add
-      .rectangle(dialogueX, dialogueY, dialogueW, dialogueH, 0x071120, 0.56)
-      .setStrokeStyle(1, 0x3d5f88, 0.42);
-    this.dialogueAccent = this.add.rectangle(dialogueX - dialogueW / 2 + 3, dialogueY, 6, dialogueH - 10, 0x82b0e8, 0.5);
+      .rectangle(dialogueX, dialogueY, dialogueW, dialogueH, 0x0e1419, 0.72)
+      .setStrokeStyle(1, 0x4a555c, 0.42);
+    this.dialogueAccent = this.add.rectangle(dialogueX - dialogueW / 2 + 3, dialogueY, 6, dialogueH - 10, 0xd19a5c, 0.55);
     this.namePlate = this.add
-      .rectangle(dialogueX - dialogueW / 2 + 78, dialogueY - dialogueH / 2 + 22, 148, 34, 0x12243d, 0.92)
-      .setStrokeStyle(1, 0x5f83b0, 0.62);
+      .rectangle(dialogueX - dialogueW / 2 + 78, dialogueY - dialogueH / 2 + 22, 148, 34, 0x171d22, 0.96)
+      .setStrokeStyle(1, 0x75644f, 0.62);
 
     this.customerName = this.add.text(dialogueX - dialogueW / 2 + 16, dialogueY - dialogueH / 2 + 5, '', {
       fontFamily: 'Georgia, serif',
       fontSize: '31px',
-      color: '#f1f6ff'
+      color: '#e4dac4'
     });
 
     this.customerLine = this.add.text(dialogueX - dialogueW / 2 + 16, dialogueY - dialogueH / 2 + 50, '', {
       fontFamily: 'Verdana, sans-serif',
       fontSize: '19px',
-      color: '#d7e3f8',
+      color: '#d9d0bf',
       wordWrap: { width: dialogueW - 34 }
     });
 
-    this.add
-      .rectangle(sectionCenterX, layout.topBarH + 126, sectionWidth, 86, 0x18263d, 0.38)
-      .setStrokeStyle(1, 0x3f5e86, 0.45);
-    this.add
-      .rectangle(sectionCenterX, layout.topBarH + 234, sectionWidth, 128, 0x142338, 0.34)
-      .setStrokeStyle(1, 0x355276, 0.42);
-    this.add
-      .rectangle(sectionCenterX, layout.topBarH + 372, sectionWidth, 108, 0x111d2f, 0.34)
-      .setStrokeStyle(1, 0x31506f, 0.38);
-    this.add.rectangle(sectionCenterX, layout.topBarH + 172, sectionWidth - 2, 2, 0x355276, 0.18);
-    this.add.rectangle(sectionCenterX, layout.topBarH + 298, sectionWidth - 2, 2, 0x355276, 0.16);
-
-    this.routingBrief = this.add.text(rightTextX, layout.topBarH + 92, '', {
-      fontFamily: 'Verdana, sans-serif',
+    this.add.rectangle(sectionCenterX, alertY, sectionWidth - 42, 34, 0x311d18, 0.96).setStrokeStyle(1, 0xc58a55, 0.55);
+    this.add.rectangle(sectionCenterX, alertY, sectionWidth - 42, 4, 0xd29f5f, 0.2);
+    this.add.text(sectionCenterX, alertY, `${t('kiosk.alertManual')}  |  ${t('kiosk.alertQueue')}`, {
+      fontFamily: 'Courier New, monospace',
       fontSize: '17px',
-      color: '#f2f7ff',
-      wordWrap: { width: rightTextWidth - 8 }
+      color: '#f1a067'
+    }).setOrigin(0.5);
+
+    this.add.rectangle(leftColumnX, columnsTopY, leftColumnWidth, columnHeight, 0x12171b, 0.84).setStrokeStyle(2, 0x4d565b, 0.7);
+    this.add.rectangle(centerColumnX, columnsTopY, centerColumnWidth, columnHeight, 0x191613, 0.92).setStrokeStyle(2, 0x5c5548, 0.85);
+    this.add.rectangle(rightColumnX, columnsTopY, rightColumnWidth, columnHeight, 0x12171b, 0.84).setStrokeStyle(2, 0x4d565b, 0.7);
+
+    this.add.rectangle(leftColumnX, columnsTopY - columnHeight / 2 + 24, leftColumnWidth - 16, 36, 0x1a2126, 0.94)
+      .setStrokeStyle(1, 0x6a5d49, 0.55);
+    this.add.text(centerColumnX, columnsTopY - columnHeight / 2 + 24, t('kiosk.documentsTitle'), {
+      fontFamily: 'Georgia, serif',
+      fontSize: '18px',
+      color: '#d2bf9f'
+    }).setOrigin(0.5);
+
+    this.add.text(rightColumnX, columnsTopY - columnHeight / 2 + 24, t('kiosk.cluesTitle'), {
+      fontFamily: 'Georgia, serif',
+      fontSize: '18px',
+      color: '#d2bf9f'
+    }).setOrigin(0.5);
+
+    this.caseFileText = this.add.text(leftColumnX - leftColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 16, '', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '19px',
+      color: '#d6c39b'
+    });
+
+    this.add
+      .rectangle(centerColumnX, columnsTopY, centerColumnWidth - 24, columnHeight - 24, 0xd1c4a2, 0.94)
+      .setStrokeStyle(2, 0x918165, 0.9);
+    this.add.rectangle(centerColumnX, columnsTopY, centerColumnWidth - 52, columnHeight - 52, 0xe6dcc0, 0.82)
+      .setStrokeStyle(1, 0xb6a27f, 0.48);
+    this.add.rectangle(centerColumnX, columnsTopY + 2, centerColumnWidth - 120, 4, 0xe1b56b, 0.18);
+    this.add.rectangle(centerColumnX + centerColumnWidth / 2 - 76, columnsTopY - columnHeight / 2 + 78, 64, 64, 0x23373f, 0.14)
+      .setStrokeStyle(1, 0xb59d74, 0.34);
+    this.add.circle(centerColumnX + centerColumnWidth / 2 - 54, columnsTopY + columnHeight / 2 - 78, 44, 0x9d5a42, 0.12)
+      .setStrokeStyle(2, 0xb3644f, 0.55);
+
+    this.add.rectangle(rightColumnX - rightColumnWidth / 2 + 64, columnsTopY - 74, 66, 66, 0x1f4a55, 0.78)
+      .setStrokeStyle(1, 0x84e3df, 0.35);
+    this.add.rectangle(rightColumnX - rightColumnWidth / 2 + 64, columnsTopY + 24, 66, 66, 0x735733, 0.84)
+      .setStrokeStyle(1, 0xe2b266, 0.35);
+
+    this.add.rectangle(sectionCenterX, layout.topBarH + 468, sectionWidth, 46, 0x141a1e, 0.96).setStrokeStyle(1, 0x49535a, 0.55);
+    this.add.text(rightPanelLeft + 20, layout.topBarH + 445, t('kiosk.routeStatus'), {
+      fontFamily: 'Courier New, monospace',
+      fontSize: '15px',
+      color: '#c9b79a'
+    });
+
+    this.routingBrief = this.add.text(leftColumnX - leftColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 58, '', {
+      fontFamily: 'Verdana, sans-serif',
+      fontSize: '16px',
+      color: '#e1d4bf',
+      wordWrap: { width: leftColumnWidth - 36 }
     });
     this.routingBrief.setLineSpacing(6);
 
-    this.passengerCardText = this.add.text(rightTextX, layout.topBarH + 184, '', {
+    this.passengerCardText = this.add.text(centerColumnX - centerColumnWidth / 2 + 34, columnsTopY - columnHeight / 2 + 48, '', {
       fontFamily: 'Courier New, monospace',
-      fontSize: '16px',
-      color: '#c9dcf6',
-      wordWrap: { width: rightTextWidth - 12 }
+      fontSize: '15px',
+      color: '#3e3427',
+      wordWrap: { width: centerColumnWidth - 70 }
     });
     this.passengerCardText.setLineSpacing(4);
 
-    this.passengerIndicatorsText = this.add.text(rightTextX, layout.topBarH + 330, '', {
+    this.passengerIndicatorsText = this.add.text(rightColumnX - rightColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 60, '', {
       fontFamily: 'Verdana, sans-serif',
-      fontSize: '17px',
-      color: '#f3dec0',
-      wordWrap: { width: rightTextWidth - 12 }
+      fontSize: '16px',
+      color: '#e6cfab',
+      wordWrap: { width: rightColumnWidth - 36 }
     });
     this.passengerIndicatorsText.setLineSpacing(8);
 
-    this.selectionText = this.add.text(rightTextX, layout.topBarH + 430, t('kiosk.selectedRouteNone'), {
+    this.selectionText = this.add.text(rightPanelLeft + 22, layout.topBarH + 476, t('kiosk.selectedRouteNone'), {
       fontFamily: 'Courier New, monospace',
       fontSize: '18px',
-      color: '#a4e7da',
-      wordWrap: { width: rightTextWidth }
+      color: '#95ddd4',
+      wordWrap: { width: sectionWidth - 44 }
     });
 
-    this.feedbackText = this.add.text(rightTextX, layout.topBarH + 462, '', {
-      fontFamily: 'Verdana, sans-serif',
+    this.feedbackText = this.add.text(rightPanelLeft + 22, layout.topBarH + 564, '', {
+      fontFamily: 'Courier New, monospace',
       fontSize: '16px',
-      color: '#f3d7a5',
-      wordWrap: { width: rightTextWidth }
+      color: '#d2bc93',
+      wordWrap: { width: sectionWidth - 44 }
     });
 
     this.ambienceText = this.add.text(layout.sidePad + 12, layout.height - layout.bottomBarH + 38, tList('kiosk.ambient')[0], {
       fontFamily: 'Courier New, monospace',
       fontSize: '16px',
-      color: '#99afcf'
+      color: '#7f8f95'
     });
 
     new TextButton(this, layout.width - layout.sidePad - 112, layout.height - layout.bottomBarH / 2, t('kiosk.dispatchButton'), {
-      width: 224,
+      width: 238,
       height: 54,
-      fontSize: '24px',
-      backgroundColor: 0x255946,
-      hoverColor: 0x3b8a6a,
-      activeColor: 0x3b8a6a,
-      strokeColor: 0x86c6af,
+      fontSize: '22px',
+      backgroundColor: 0x521b17,
+      hoverColor: 0x7d3126,
+      activeColor: 0x7d3126,
+      strokeColor: 0xd39c5a,
+      textColor: '#f4e7d1',
       onClick: () => this.handleDispatch()
     });
+
+    this.add.text(layout.width - layout.sidePad - 364, layout.height - layout.bottomBarH / 2, t('kiosk.bottomHint'), {
+      fontFamily: 'Verdana, sans-serif',
+      fontSize: '15px',
+      color: '#d8bc86',
+      wordWrap: { width: 430 }
+    }).setOrigin(0, 0.5);
 
     this.refreshHud();
   }
 
   private createDestinationButtons(): void {
     const layout = this.getLayout();
-    const columns = 2;
+    const columns = 3;
     const innerPad = 26;
-    const buttonGapX = 16;
-    const buttonWidth = (layout.rightPanelW - innerPad * 2 - buttonGapX) / columns;
-    const buttonGapY = 58;
-    const buttonHeight = 46;
+    const buttonGapX = 14;
+    const buttonWidth = (layout.rightPanelW - innerPad * 2 - buttonGapX * (columns - 1)) / columns;
+    const buttonGapY = 62;
+    const buttonHeight = 54;
     const startX = layout.sidePad + layout.leftPanelW + layout.gap + innerPad + buttonWidth / 2;
     const maxGridBottom = layout.height - layout.bottomBarH - 24;
     const rowCount = Math.ceil(DESTINATION_POOL.length / columns);
-    let startY = layout.topBarH + 514;
+    let startY = layout.topBarH + 546;
     const projectedBottom = startY + (rowCount - 1) * buttonGapY + buttonHeight / 2;
 
     if (projectedBottom > maxGridBottom) {
@@ -488,11 +568,12 @@ export class KioskScene extends Phaser.Scene {
       const button = new TextButton(this, x, y, `${destination.code}  ${this.getLocalizedDestinationLabel(destination)}`, {
         width: buttonWidth,
         height: buttonHeight,
-        fontSize: '18px',
-        backgroundColor: 0x273653,
-        hoverColor: 0x3f5d88,
-        activeColor: 0x6a5130,
-        strokeColor: 0x7ca3d1,
+        fontSize: '17px',
+        backgroundColor: 0x20262b,
+        hoverColor: 0x323e46,
+        activeColor: 0x365c61,
+        strokeColor: 0xa78457,
+        textColor: '#ebe0cb',
         onClick: () => this.selectDestination(destination)
       });
       this.destinationButtons[destination.id] = button;
@@ -543,7 +624,8 @@ export class KioskScene extends Phaser.Scene {
     this.dialogueAccent.setFillStyle(accentColor, 0.58);
     this.namePlate.setFillStyle(0x12243d, 0.92);
 
-    this.routingBrief.setText(t('kiosk.routingBrief', { caseId: passenger.id.toUpperCase() }));
+    this.caseFileText.setText(t('kiosk.caseFile', { caseId: passenger.id.toUpperCase() }));
+    this.routingBrief.setText(t('kiosk.routingInstructions'));
     this.passengerCardText.setText(this.formatPassengerCard(passenger));
     this.passengerIndicatorsText.setText(this.formatPassengerIndicators(passenger));
     this.feedbackText.setText('');
