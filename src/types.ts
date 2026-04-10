@@ -37,14 +37,46 @@ export interface PassengerIndicator {
   tone?: 'neutral' | 'warning' | 'alert' | 'safe';
 }
 
-export interface PassengerProfile {
-  id: string;
+export type PassengerCaseType = 'clean' | 'transit' | 'mixed-language' | 'missing-passport' | 'conflicting';
+
+export interface PassengerPersonTraits {
   name: string;
   speech: string;
-  card: PassengerCard;
-  symbol: PassengerIndicator;
-  mark: PassengerIndicator;
-  destinationId: string;
+  originCountryId: string;
+  passportCountryId: string | null;
+  spokenLanguage: string;
+}
+
+export interface PassengerSummaryClues {
+  originCountryId: string;
+  passportCountryId: string | null;
+  spokenLanguage: string;
+}
+
+export interface PassengerRoutingClues {
+  documentText: string;
+  declaredRoute: string;
+  languageTag: string;
+  symbol: string;
+  mark: string;
+}
+
+export interface PassengerRouteCard {
+  mode: 'flag' | 'hint';
+  flagCountryCode?: string;
+  hintLabel?: string;
+  hintValue?: string;
+}
+
+export interface PassengerProfile {
+  id: string;
+  caseType: PassengerCaseType;
+  destinationCountryId: string;
+  person: PassengerPersonTraits;
+  summary: PassengerSummaryClues;
+  routing: PassengerRoutingClues;
+  routeCard: PassengerRouteCard;
+  accentColor?: string;
   reward: number;
   penalty: number;
   strikePenalty?: number;

@@ -2,6 +2,11 @@ export type SupportedLanguage = 'en' | 'ru' | 'de';
 
 const LANGUAGE_STORAGE_KEY = 'vibegame-language';
 const SUPPORTED_LANGUAGES: SupportedLanguage[] = ['en', 'ru', 'de'];
+const LANGUAGE_LOCALES: Record<SupportedLanguage, string> = {
+  en: 'en',
+  ru: 'ru',
+  de: 'de'
+};
 
 type TranslationValue = string | string[];
 
@@ -59,11 +64,18 @@ const translations: Record<SupportedLanguage, Record<string, TranslationValue>> 
     'kiosk.arrivalSide': 'arrival side',
     'kiosk.controlSide': 'control side',
     'kiosk.caseFile': 'Case {caseId}',
-    'kiosk.routingInstructions': 'Compare speech, card, symbol and mark. Choose the correct country desk.',
+    'kiosk.passengerProfile': 'Passenger Summary',
+    'kiosk.routingInstructions': 'Use the route card and travel documents first. Speech and name are only supporting clues.',
     'kiosk.alertManual': 'MANUAL ROUTING ACTIVE',
     'kiosk.alertQueue': 'QUEUE OVERLOAD',
     'kiosk.documentsTitle': 'Passenger File',
-    'kiosk.cluesTitle': 'Cross-check Signals',
+    'kiosk.cluesTitle': 'Route Card',
+    'kiosk.flagClue': 'Destination Flag',
+    'kiosk.originCountry': 'Origin',
+    'kiosk.passportCountry': 'Passport',
+    'kiosk.passportMissing': 'missing',
+    'kiosk.spokenLanguage': 'Language',
+    'kiosk.destinationHidden': 'Destination: see route card',
     'kiosk.routeStatus': 'Route Status',
     'kiosk.bottomHint': 'Check every clue carefully before confirming the route.',
     'kiosk.selectedRouteNone': 'Selected route: -',
@@ -155,11 +167,18 @@ const translations: Record<SupportedLanguage, Record<string, TranslationValue>> 
     'kiosk.arrivalSide': 'сторона прибытия',
     'kiosk.controlSide': 'сторона контроля',
     'kiosk.caseFile': 'Дело {caseId}',
-    'kiosk.routingInstructions': 'Сверьте речь, карточку, символ и отметку. Выберите правильную страну назначения.',
+    'kiosk.passengerProfile': 'Сводка Пассажира',
+    'kiosk.routingInstructions': 'Сначала сверяйте маршрут и документы. Речь и имя здесь только вспомогательные признаки.',
     'kiosk.alertManual': 'РУЧНАЯ МАРШРУТИЗАЦИЯ АКТИВНА',
     'kiosk.alertQueue': 'ПЕРЕГРУЗКА ОЧЕРЕДИ',
     'kiosk.documentsTitle': 'Досье Пассажира',
-    'kiosk.cluesTitle': 'Сверка Сигналов',
+    'kiosk.cluesTitle': 'Маршрутная Карточка',
+    'kiosk.flagClue': 'Флаг Назначения',
+    'kiosk.originCountry': 'Откуда',
+    'kiosk.passportCountry': 'Паспорт',
+    'kiosk.passportMissing': 'отсутствует',
+    'kiosk.spokenLanguage': 'Язык',
+    'kiosk.destinationHidden': 'Пункт назначения: смотрите маршрутную карточку',
     'kiosk.routeStatus': 'Статус Маршрута',
     'kiosk.bottomHint': 'Тщательно проверьте все улики перед подтверждением маршрута.',
     'kiosk.selectedRouteNone': 'Выбранный маршрут: -',
@@ -251,11 +270,18 @@ const translations: Record<SupportedLanguage, Record<string, TranslationValue>> 
     'kiosk.arrivalSide': 'ankunftsseite',
     'kiosk.controlSide': 'kontrollseite',
     'kiosk.caseFile': 'Fall {caseId}',
-    'kiosk.routingInstructions': 'Vergleiche Sprache, Karte, Symbol und Markierung. Waehle das richtige Zielland.',
+    'kiosk.passengerProfile': 'Passagierdaten',
+    'kiosk.routingInstructions': 'Pruefe zuerst Route und Dokumente. Sprache und Name sind nur Hilfsmerkmale.',
     'kiosk.alertManual': 'MANUELLE ROUTUNG AKTIV',
     'kiosk.alertQueue': 'QUEUE-UEBERLASTUNG',
     'kiosk.documentsTitle': 'Passagierakte',
-    'kiosk.cluesTitle': 'Signalabgleich',
+    'kiosk.cluesTitle': 'Routenkarte',
+    'kiosk.flagClue': 'Zielflagge',
+    'kiosk.originCountry': 'Herkunft',
+    'kiosk.passportCountry': 'Pass',
+    'kiosk.passportMissing': 'fehlt',
+    'kiosk.spokenLanguage': 'Sprache',
+    'kiosk.destinationHidden': 'Ziel: siehe Routenkartenfeld',
     'kiosk.routeStatus': 'Routenstatus',
     'kiosk.bottomHint': 'Pruefe alle Hinweise sorgfaeltig, bevor du die Route bestaetigst.',
     'kiosk.selectedRouteNone': 'Gewaehlte Route: -',
@@ -304,12 +330,40 @@ const dataTranslations: Record<SupportedLanguage, Record<string, string>> = {
     'Passenger Permit': 'Разрешение пассажира',
     'Transfer Docket': 'Трансферный талон',
     'Boarding Summary': 'Сводка посадки',
+    'Routing Memo': 'Маршрутная записка',
+    'Corridor Permit': 'Коридорный пропуск',
     'Diplomatic Transit Card': 'Дипломатическая транзитная карта',
     Document: 'Документ',
     'Declared route': 'Заявленный маршрут',
     'Language tag': 'Языковая пометка',
-    Symbol: 'Символ',
-    Mark: 'Отметка',
+    Symbol: 'Маршрутный знак',
+    Mark: 'Контрольный штамп',
+    'Route code': 'Код маршрута',
+    'Terminal code': 'Код терминала',
+    'Corridor label': 'Обозначение коридора',
+    'Region hint': 'Региональная пометка',
+    'Entry seal': 'Входная печать',
+    'final transit corridor': 'финальный транзитный коридор',
+    'priority transfer lane': 'приоритетная трансферная линия',
+    'arrival exchange route': 'маршрут пересадки по прибытии',
+    'manual routing corridor': 'коридор ручной маршрутизации',
+    'international transfer desk': 'международная трансферная линия',
+    'Route board marker': 'указатель маршрута',
+    'Transfer desk sign': 'знак трансферной стойки',
+    'Gate direction sign': 'указатель направления к выходу',
+    'Manual routing sign': 'знак ручной маршрутизации',
+    'route symbol': 'маршрутный знак',
+    'corridor symbol': 'коридорный знак',
+    'destination marker': 'маркер направления',
+    'transfer symbol': 'трансферный знак',
+    'entry seal': 'входная печать',
+    'transit stamp': 'транзитный штамп',
+    'clearance stamp': 'штамп допуска',
+    'corridor stamp': 'коридорный штамп',
+    'Transit stamp verified': 'транзитный штамп подтвержден',
+    'Control stamp applied': 'контрольный штамп поставлен',
+    'Transfer stamp cleared': 'трансферный штамп подтвержден',
+    'Manual review stamp': 'штамп ручной проверки',
     'Passport JP-44182': 'Паспорт JP-44182',
     'Passport DE-18457': 'Паспорт DE-18457',
     'Passport MN-90311': 'Паспорт MN-90311',
@@ -318,6 +372,10 @@ const dataTranslations: Record<SupportedLanguage, Record<string, string>> = {
     'Passport FR-22894': 'Паспорт FR-22894',
     'Passport JP-62017': 'Паспорт JP-62017',
     'Passport DE-77502': 'Паспорт DE-77502',
+    'No passport attached': 'Паспорт не приложен',
+    'Document missing, route note only': 'Документ отсутствует, есть только маршрутная пометка',
+    'Passport held by customs transfer desk': 'Паспорт удержан на таможенном транзитном посту',
+    'Identity page unavailable, transit stub present': 'Страница с данными недоступна, имеется транзитный корешок',
     'Island connection': 'Островной маршрут',
     'Central rail-air transfer': 'Центральный ж/д-авиа трансфер',
     'Steppe regional line': 'Степная региональная линия',
@@ -328,10 +386,31 @@ const dataTranslations: Record<SupportedLanguage, Record<string, string>> = {
     'Central desk B2': 'Центральная стойка B2',
     Japanese: 'Японский',
     German: 'Немецкий',
+    Korean: 'Корейский',
     Mongolian: 'Монгольский',
     Turkish: 'Турецкий',
     Spanish: 'Испанский',
     French: 'Французский',
+    Russian: 'Русский',
+    Ukrainian: 'Украинский',
+    Arabic: 'Арабский',
+    Persian: 'Персидский',
+    Hindi: 'Хинди',
+    Bengali: 'Бенгальский',
+    Mandarin: 'Китайский',
+    Vietnamese: 'Вьетнамский',
+    Thai: 'Тайский',
+    Indonesian: 'Индонезийский',
+    Swahili: 'Суахили',
+    Amharic: 'Амхарский',
+    Greek: 'Греческий',
+    Italian: 'Итальянский',
+    Polish: 'Польский',
+    Serbian: 'Сербский',
+    Portuguese: 'Португальский',
+    Uzbek: 'Узбекский',
+    Kazakh: 'Казахский',
+    English: 'Английский',
     'Red crane emblem': 'Эмблема красного журавля',
     'Black eagle seal': 'Печать черного орла',
     'Blue soyombo icon': 'Синий знак соембо',
@@ -353,12 +432,40 @@ const dataTranslations: Record<SupportedLanguage, Record<string, string>> = {
     'Passenger Permit': 'Passagiergenehmigung',
     'Transfer Docket': 'Transferbeleg',
     'Boarding Summary': 'Boarding-Uebersicht',
+    'Routing Memo': 'Routingvermerk',
+    'Corridor Permit': 'Korridorgenehmigung',
     'Diplomatic Transit Card': 'Diplomatische Transitkarte',
     Document: 'Dokument',
     'Declared route': 'Gemeldete Route',
     'Language tag': 'Sprachhinweis',
-    Symbol: 'Symbol',
-    Mark: 'Markierung',
+    Symbol: 'Routenzeichen',
+    Mark: 'Kontrollstempel',
+    'Route code': 'Routencode',
+    'Terminal code': 'Terminalcode',
+    'Corridor label': 'Korridorbezeichnung',
+    'Region hint': 'Regionhinweis',
+    'Entry seal': 'Eingangssiegel',
+    'final transit corridor': 'finaler Transitkorridor',
+    'priority transfer lane': 'priorisierte Transferlinie',
+    'arrival exchange route': 'Ankunfts-Transferroute',
+    'manual routing corridor': 'Korridor fuer manuelle Routung',
+    'international transfer desk': 'internationale Transferlinie',
+    'Route board marker': 'Routenanzeiger',
+    'Transfer desk sign': 'Zeichen des Transferschalters',
+    'Gate direction sign': 'Richtungsschild zum Gate',
+    'Manual routing sign': 'Zeichen fuer manuelle Routung',
+    'route symbol': 'Routensymbol',
+    'corridor symbol': 'Korridorsymbol',
+    'destination marker': 'Zielmarkierung',
+    'transfer symbol': 'Transfersymbol',
+    'entry seal': 'Eingangssiegel',
+    'transit stamp': 'Transitstempel',
+    'clearance stamp': 'Freigabestempel',
+    'corridor stamp': 'Korridorstempel',
+    'Transit stamp verified': 'Transitstempel bestaetigt',
+    'Control stamp applied': 'Kontrollstempel gesetzt',
+    'Transfer stamp cleared': 'Transferstempel bestaetigt',
+    'Manual review stamp': 'Stempel der manuellen Pruefung',
     'Passport JP-44182': 'Reisepass JP-44182',
     'Passport DE-18457': 'Reisepass DE-18457',
     'Passport MN-90311': 'Reisepass MN-90311',
@@ -367,6 +474,10 @@ const dataTranslations: Record<SupportedLanguage, Record<string, string>> = {
     'Passport FR-22894': 'Reisepass FR-22894',
     'Passport JP-62017': 'Reisepass JP-62017',
     'Passport DE-77502': 'Reisepass DE-77502',
+    'No passport attached': 'Kein Reisepass beigefuegt',
+    'Document missing, route note only': 'Dokument fehlt, nur eine Routennotiz liegt vor',
+    'Passport held by customs transfer desk': 'Reisepass wird am Zoll-Transferpunkt verwahrt',
+    'Identity page unavailable, transit stub present': 'Identitaetsseite fehlt, Transitabschnitt vorhanden',
     'Island connection': 'Inselverbindung',
     'Central rail-air transfer': 'Zentraler Bahn-Luft-Transfer',
     'Steppe regional line': 'Regionale Steppenlinie',
@@ -377,10 +488,31 @@ const dataTranslations: Record<SupportedLanguage, Record<string, string>> = {
     'Central desk B2': 'Zentralschalter B2',
     Japanese: 'Japanisch',
     German: 'Deutsch',
+    Korean: 'Koreanisch',
     Mongolian: 'Mongolisch',
     Turkish: 'Tuerkisch',
     Spanish: 'Spanisch',
     French: 'Franzoesisch',
+    Russian: 'Russisch',
+    Ukrainian: 'Ukrainisch',
+    Arabic: 'Arabisch',
+    Persian: 'Persisch',
+    Hindi: 'Hindi',
+    Bengali: 'Bengalisch',
+    Mandarin: 'Mandarin',
+    Vietnamese: 'Vietnamesisch',
+    Thai: 'Thai',
+    Indonesian: 'Indonesisch',
+    Swahili: 'Suaheli',
+    Amharic: 'Amharisch',
+    Greek: 'Griechisch',
+    Italian: 'Italienisch',
+    Polish: 'Polnisch',
+    Serbian: 'Serbisch',
+    Portuguese: 'Portugiesisch',
+    Uzbek: 'Usbekisch',
+    Kazakh: 'Kasachisch',
+    English: 'Englisch',
     'Red crane emblem': 'Emblem des roten Kranichs',
     'Black eagle seal': 'Siegel des schwarzen Adlers',
     'Blue soyombo icon': 'Blaues Soyombo-Symbol',
@@ -395,6 +527,126 @@ const dataTranslations: Record<SupportedLanguage, Record<string, string>> = {
     'D1 embassy clearance': 'Botschaftsfreigabe D1',
     'C1 priority stripe': 'Prioritaetsstreifen C1',
     'Steel-blue platform mark': 'Stahlblaue Plattformmarke'
+  }
+};
+
+const dataFragmentTranslations: Record<SupportedLanguage, Record<string, string>> = {
+  en: {},
+  ru: {
+    'transfer corridor': 'трансферный коридор',
+    'dispatch zone': 'зона маршрутизации',
+    'inbound seal': 'входная печать',
+    'manual dispatch belt': 'полоса ручной маршрутизации',
+    'registry transfer line': 'линия реестрового трансфера',
+    'northern transfer band': 'северная трансферная линия',
+    'amber regional line': 'янтарная региональная линия',
+    'delta checkpoint route': 'маршрут контрольного пункта дельта',
+    'sector relay lane': 'линия секционного перенаправления',
+    'priority corridor': 'приоритетный коридор',
+    'corridor crest': 'коридорный герб',
+    'routing sigil': 'маршрутный сигил',
+    'arrival emblem': 'эмблема прибытия',
+    'dispatch icon': 'значок маршрутизации',
+    'gate medallion': 'медальон шлюза',
+    'customs stripe': 'таможенная полоса',
+    'corridor stamp': 'коридорный штамп',
+    'transfer seal': 'трансферная печать',
+    'arrival imprint': 'метка прибытия',
+    'queue marker': 'маркер очереди',
+    'Embassy note': 'Посольская записка',
+    'Transit visa': 'Транзитная виза',
+    'Crew booklet': 'Служебная книжка',
+    Passport: 'Паспорт',
+    amber: 'янтарный',
+    cobalt: 'кобальтовый',
+    jade: 'нефритовый',
+    saffron: 'шафрановый',
+    ivory: 'слоновая кость',
+    onyx: 'ониксовый',
+    teal: 'бирюзовый',
+    brass: 'латунный',
+    scarlet: 'алый',
+    ash: 'пепельный',
+    linen: 'льняной',
+    oxide: 'оксидный',
+    orbital: 'орбитальный',
+    trident: 'трезубец',
+    harbor: 'портовый',
+    falcon: 'сокол',
+    cedar: 'кедровый',
+    lotus: 'лотос',
+    crown: 'корона',
+    comet: 'комета',
+    delta: 'дельта',
+    tower: 'башня',
+    sunline: 'солнечная линия',
+    lattice: 'решетка',
+    aurora: 'аврора',
+    mariner: 'морской',
+    spire: 'шпиль',
+    anvil: 'наковальня',
+    windrose: 'роза ветров',
+    ember: 'уголь',
+    ripple: 'рябь',
+    glyph: 'глиф'
+  },
+  de: {
+    'transfer corridor': 'Transferkorridor',
+    'dispatch zone': 'Routingzone',
+    'inbound seal': 'Eingangssiegel',
+    'manual dispatch belt': 'Band fuer manuelle Routung',
+    'registry transfer line': 'Register-Transferlinie',
+    'northern transfer band': 'noerdliches Transferband',
+    'amber regional line': 'bernsteinfarbene Regionallinie',
+    'delta checkpoint route': 'Route des Delta-Kontrollpunkts',
+    'sector relay lane': 'Sektor-Weiterleitungsspur',
+    'priority corridor': 'Prioritaetskorridor',
+    'corridor crest': 'Korridorwappen',
+    'routing sigil': 'Routensiegel',
+    'arrival emblem': 'Ankunftsemblem',
+    'dispatch icon': 'Routing-Symbol',
+    'gate medallion': 'Tor-Medaillon',
+    'customs stripe': 'Zollstreifen',
+    'corridor stamp': 'Korridorstempel',
+    'transfer seal': 'Transfersiegel',
+    'arrival imprint': 'Ankunftsmarke',
+    'queue marker': 'Queue-Markierung',
+    'Embassy note': 'Botschaftsvermerk',
+    'Transit visa': 'Transitvisum',
+    'Crew booklet': 'Dienstbuch',
+    Passport: 'Reisepass',
+    amber: 'bernstein',
+    cobalt: 'kobalt',
+    jade: 'jade',
+    saffron: 'safran',
+    ivory: 'elfenbein',
+    onyx: 'onyx',
+    teal: 'petrol',
+    brass: 'messing',
+    scarlet: 'scharlach',
+    ash: 'asche',
+    linen: 'leinen',
+    oxide: 'oxid',
+    orbital: 'orbital',
+    trident: 'dreizack',
+    harbor: 'hafen',
+    falcon: 'falke',
+    cedar: 'zeder',
+    lotus: 'lotus',
+    crown: 'krone',
+    comet: 'komet',
+    delta: 'delta',
+    tower: 'turm',
+    sunline: 'sonnenlinie',
+    lattice: 'gitter',
+    aurora: 'aurora',
+    mariner: 'seefahrer',
+    spire: 'turmspitze',
+    anvil: 'amboss',
+    windrose: 'windrose',
+    ember: 'glut',
+    ripple: 'welle',
+    glyph: 'glyphe'
   }
 };
 
@@ -423,6 +675,14 @@ function interpolate(template: string, params?: Record<string, string | number>)
 
 function getRawValue(key: string): TranslationValue | undefined {
   return translations[currentLanguage][key] ?? translations.en[key];
+}
+
+function getRegionName(code: string): string | undefined {
+  try {
+    return new Intl.DisplayNames([LANGUAGE_LOCALES[currentLanguage]], { type: 'region' }).of(code);
+  } catch {
+    return undefined;
+  }
 }
 
 export function getCurrentLanguage(): SupportedLanguage {
@@ -456,9 +716,131 @@ export function tList(key: string): string[] {
 
 export function translateDestination(id: string, fallback: string): string {
   const value = getRawValue(`destinations.${id}`);
-  return typeof value === 'string' ? value : fallback;
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  const localizedRegion = getRegionName(id.toUpperCase());
+  return localizedRegion ?? fallback;
+}
+
+function replaceFragments(text: string, fragments: Record<string, string>): string {
+  return Object.entries(fragments)
+    .sort((first, second) => second[0].length - first[0].length)
+    .reduce((current, [source, target]) => current.split(source).join(target), text);
+}
+
+function capitalizeFirst(text: string): string {
+  if (!text) {
+    return text;
+  }
+
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function translateProceduralDocument(text: string): string | null {
+  const documentMatch = text.match(/^(Passport|Transit visa|Crew booklet|Embassy note) ([A-Z]{2}-\d+)$/);
+  if (!documentMatch) {
+    return null;
+  }
+
+  const [, documentType, documentCode] = documentMatch;
+  return `${translateDataText(documentType)} ${documentCode}`;
+}
+
+function translateProceduralSymbol(text: string): string | null {
+  const symbolMatch = text.match(/^([a-z]+) (corridor crest|routing sigil|arrival emblem|dispatch icon|gate medallion)$/);
+  if (!symbolMatch) {
+    return null;
+  }
+
+  const [, motif, symbolType] = symbolMatch;
+  const motifLabel = capitalizeFirst(translateDataText(motif));
+
+  if (currentLanguage === 'ru') {
+    const kinds: Record<string, string> = {
+      'corridor crest': 'коридорный герб',
+      'routing sigil': 'маршрутный символ',
+      'arrival emblem': 'эмблема прибытия',
+      'dispatch icon': 'маршрутный знак',
+      'gate medallion': 'пропускной медальон'
+    };
+    return `${kinds[symbolType] ?? translateDataText(symbolType)} «${motifLabel}»`;
+  }
+
+  if (currentLanguage === 'de') {
+    const kinds: Record<string, string> = {
+      'corridor crest': 'Korridorwappen',
+      'routing sigil': 'Routensiegel',
+      'arrival emblem': 'Ankunftsemblem',
+      'dispatch icon': 'Routing-Symbol',
+      'gate medallion': 'Tor-Medaillon'
+    };
+    return `${kinds[symbolType] ?? translateDataText(symbolType)} "${motifLabel}"`;
+  }
+
+  return null;
+}
+
+function translateProceduralStamp(text: string): string | null {
+  const stampMatch = text.match(/^([a-z]+)-(\d+) (customs stripe|corridor stamp|transfer seal|arrival imprint|queue marker)$/);
+  if (!stampMatch) {
+    return null;
+  }
+
+  const [, band, slot, stampType] = stampMatch;
+  const code = `${band.toUpperCase()}-${slot}`;
+
+  if (currentLanguage === 'ru') {
+    const kinds: Record<string, string> = {
+      'customs stripe': 'таможенная полоса',
+      'corridor stamp': 'коридорный штамп',
+      'transfer seal': 'трансферная печать',
+      'arrival imprint': 'метка прибытия',
+      'queue marker': 'маркер очереди'
+    };
+    return `${kinds[stampType] ?? translateDataText(stampType)} ${code}`;
+  }
+
+  if (currentLanguage === 'de') {
+    const kinds: Record<string, string> = {
+      'customs stripe': 'Zollstreifen',
+      'corridor stamp': 'Korridorstempel',
+      'transfer seal': 'Transfersiegel',
+      'arrival imprint': 'Ankunftsmarke',
+      'queue marker': 'Queue-Markierung'
+    };
+    return `${kinds[stampType] ?? translateDataText(stampType)} ${code}`;
+  }
+
+  return null;
 }
 
 export function translateDataText(text: string): string {
-  return dataTranslations[currentLanguage][text] ?? text;
+  const directTranslation = dataTranslations[currentLanguage][text];
+  if (directTranslation) {
+    return directTranslation;
+  }
+
+  if (currentLanguage === 'en') {
+    return text;
+  }
+
+  const proceduralDocument = translateProceduralDocument(text);
+  if (proceduralDocument) {
+    return proceduralDocument;
+  }
+
+  const proceduralSymbol = translateProceduralSymbol(text);
+  if (proceduralSymbol) {
+    return proceduralSymbol;
+  }
+
+  const proceduralStamp = translateProceduralStamp(text);
+  if (proceduralStamp) {
+    return proceduralStamp;
+  }
+
+  const translated = replaceFragments(text, dataFragmentTranslations[currentLanguage]);
+  return translated;
 }

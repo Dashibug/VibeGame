@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
 import { DESTINATION_POOL, PASSENGER_PROFILES } from '../data/customers';
-import { t, tList, translateDataText, translateDestination } from '../i18n';
+import { t, translateDataText, translateDestination } from '../i18n';
 import type { DestinationDefinition, PassengerProfile } from '../types';
 import { TextButton } from '../ui/Button';
 
 const SHIFT_DURATION_SECONDS = 120;
 const MAX_STRIKES = 3;
-const PASSENGER_TIMEOUT_MS = 14000;
+const PASSENGER_TIMEOUT_MS = 20000;
 
 export class KioskScene extends Phaser.Scene {
   private money = 0;
@@ -19,9 +19,10 @@ export class KioskScene extends Phaser.Scene {
   private routingBrief!: Phaser.GameObjects.Text;
   private passengerCardText!: Phaser.GameObjects.Text;
   private passengerIndicatorsText!: Phaser.GameObjects.Text;
+  private destinationFlagText!: Phaser.GameObjects.Text;
+  private routeCardLabelText!: Phaser.GameObjects.Text;
   private customerName!: Phaser.GameObjects.Text;
   private customerLine!: Phaser.GameObjects.Text;
-  private selectionText!: Phaser.GameObjects.Text;
   private feedbackText!: Phaser.GameObjects.Text;
   private hudText!: Phaser.GameObjects.Text;
   private customerSilhouette!: Phaser.GameObjects.Rectangle;
@@ -32,12 +33,11 @@ export class KioskScene extends Phaser.Scene {
   private dialoguePanel!: Phaser.GameObjects.Rectangle;
   private namePlate!: Phaser.GameObjects.Rectangle;
   private dialogueAccent!: Phaser.GameObjects.Rectangle;
-  private ambienceText!: Phaser.GameObjects.Text;
   private customerBaseX = 0;
   private customerBaseY = 0;
 
   private currentPassenger: PassengerProfile | null = null;
-  private selectedDestinationId: string | null = null;
+  private activeDestinations: DestinationDefinition[] = [];
   private destinationButtons: Record<string, TextButton> = {};
   private readonly customerPortraitKeys = [
     'customer-01',
@@ -69,7 +69,6 @@ export class KioskScene extends Phaser.Scene {
 
     this.drawBackground();
     this.createUI();
-    this.createDestinationButtons();
     this.spawnNextPassenger();
 
     this.time.addEvent({
@@ -82,19 +81,6 @@ export class KioskScene extends Phaser.Scene {
         if (this.shiftTimeLeft <= 0) {
           this.endShift();
         }
-      }
-    });
-
-    this.time.addEvent({
-      delay: 3200,
-      loop: true,
-      callback: () => {
-        this.ambienceText.setText(Phaser.Utils.Array.GetRandom(tList('kiosk.ambient')));
-        this.tweens.add({
-          targets: this.ambienceText,
-          alpha: { from: 0.3, to: 0.95 },
-          duration: 420
-        });
       }
     });
 
@@ -171,9 +157,7 @@ export class KioskScene extends Phaser.Scene {
     this.add.rectangle(width / 2, height / 2, width - 34, height - 34, 0x000000, 0).setStrokeStyle(1, 0x45545d, 0.45);
 
     this.add.rectangle(width / 2, layout.topBarH / 2, width, layout.topBarH, 0x111a21, 0.88);
-    this.add.rectangle(width / 2, height - layout.bottomBarH / 2, width, layout.bottomBarH, 0x131b22, 0.94);
     this.add.rectangle(width / 2, layout.topBarH - 4, width - 42, 2, 0x8b6a43, 0.3);
-    this.add.rectangle(width / 2, height - layout.bottomBarH + 4, width - 42, 2, 0x7cd4d3, 0.16);
 
     this.add
       .rectangle(layout.leftPanelX, layout.panelY, layout.leftPanelW, layout.panelH, exteriorPanel, 0.93)
@@ -360,16 +344,6 @@ export class KioskScene extends Phaser.Scene {
     this.add.triangle(layout.rightPanelX + layout.rightPanelW / 2 + 48, layout.topBarH + 62, 0, 10, 10, -10, 20, 10, 0x7a221d, 0.95)
       .setStrokeStyle(1, 0xff8b67, 0.55);
 
-    this.add.text(layout.sidePad + 12, height - layout.bottomBarH + 12, t('kiosk.arrivalSide'), {
-      fontFamily: 'Verdana, sans-serif',
-      fontSize: '13px',
-      color: '#7c8f92'
-    });
-    this.add.text(layout.sidePad + layout.leftPanelW + layout.gap + 12, height - layout.bottomBarH + 12, t('kiosk.controlSide'), {
-      fontFamily: 'Verdana, sans-serif',
-      fontSize: '13px',
-      color: '#d0a168'
-    });
   }
 
   private createUI(): void {
@@ -445,6 +419,11 @@ export class KioskScene extends Phaser.Scene {
       fontSize: '18px',
       color: '#d2bf9f'
     }).setOrigin(0.5);
+    this.routeCardLabelText = this.add.text(rightColumnX - rightColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 58, t('kiosk.flagClue'), {
+      fontFamily: 'Verdana, sans-serif',
+      fontSize: '14px',
+      color: '#a9cdd1'
+    });
 
     this.caseFileText = this.add.text(leftColumnX - leftColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 16, '', {
       fontFamily: 'Georgia, serif',
@@ -465,8 +444,6 @@ export class KioskScene extends Phaser.Scene {
 
     this.add.rectangle(rightColumnX - rightColumnWidth / 2 + 64, columnsTopY - 74, 66, 66, 0x1f4a55, 0.78)
       .setStrokeStyle(1, 0x84e3df, 0.35);
-    this.add.rectangle(rightColumnX - rightColumnWidth / 2 + 64, columnsTopY + 24, 66, 66, 0x735733, 0.84)
-      .setStrokeStyle(1, 0xe2b266, 0.35);
 
     this.add.rectangle(sectionCenterX, layout.topBarH + 468, sectionWidth, 46, 0x141a1e, 0.96).setStrokeStyle(1, 0x49535a, 0.55);
     this.add.text(rightPanelLeft + 20, layout.topBarH + 445, t('kiosk.routeStatus'), {
@@ -491,7 +468,12 @@ export class KioskScene extends Phaser.Scene {
     });
     this.passengerCardText.setLineSpacing(4);
 
-    this.passengerIndicatorsText = this.add.text(rightColumnX - rightColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 60, '', {
+    this.destinationFlagText = this.add.text(rightColumnX - rightColumnWidth / 2 + 64, columnsTopY - 74, '', {
+      fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
+      fontSize: '42px'
+    }).setOrigin(0.5);
+
+    this.passengerIndicatorsText = this.add.text(rightColumnX - rightColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 156, '', {
       fontFamily: 'Verdana, sans-serif',
       fontSize: '16px',
       color: '#e6cfab',
@@ -499,49 +481,20 @@ export class KioskScene extends Phaser.Scene {
     });
     this.passengerIndicatorsText.setLineSpacing(8);
 
-    this.selectionText = this.add.text(rightPanelLeft + 22, layout.topBarH + 476, t('kiosk.selectedRouteNone'), {
-      fontFamily: 'Courier New, monospace',
-      fontSize: '18px',
-      color: '#95ddd4',
-      wordWrap: { width: sectionWidth - 44 }
-    });
-
-    this.feedbackText = this.add.text(rightPanelLeft + 22, layout.topBarH + 564, '', {
+    this.feedbackText = this.add.text(rightPanelLeft + 22, layout.topBarH + 476, '', {
       fontFamily: 'Courier New, monospace',
       fontSize: '16px',
       color: '#d2bc93',
       wordWrap: { width: sectionWidth - 44 }
     });
 
-    this.ambienceText = this.add.text(layout.sidePad + 12, layout.height - layout.bottomBarH + 38, tList('kiosk.ambient')[0], {
-      fontFamily: 'Courier New, monospace',
-      fontSize: '16px',
-      color: '#7f8f95'
-    });
-
-    new TextButton(this, layout.width - layout.sidePad - 112, layout.height - layout.bottomBarH / 2, t('kiosk.dispatchButton'), {
-      width: 238,
-      height: 54,
-      fontSize: '22px',
-      backgroundColor: 0x521b17,
-      hoverColor: 0x7d3126,
-      activeColor: 0x7d3126,
-      strokeColor: 0xd39c5a,
-      textColor: '#f4e7d1',
-      onClick: () => this.handleDispatch()
-    });
-
-    this.add.text(layout.width - layout.sidePad - 364, layout.height - layout.bottomBarH / 2, t('kiosk.bottomHint'), {
-      fontFamily: 'Verdana, sans-serif',
-      fontSize: '15px',
-      color: '#d8bc86',
-      wordWrap: { width: 430 }
-    }).setOrigin(0, 0.5);
-
     this.refreshHud();
   }
 
   private createDestinationButtons(): void {
+    Object.values(this.destinationButtons).forEach((button) => button.destroy());
+    this.destinationButtons = {};
+
     const layout = this.getLayout();
     const columns = 3;
     const innerPad = 26;
@@ -551,7 +504,7 @@ export class KioskScene extends Phaser.Scene {
     const buttonHeight = 54;
     const startX = layout.sidePad + layout.leftPanelW + layout.gap + innerPad + buttonWidth / 2;
     const maxGridBottom = layout.height - layout.bottomBarH - 24;
-    const rowCount = Math.ceil(DESTINATION_POOL.length / columns);
+    const rowCount = Math.ceil(this.activeDestinations.length / columns);
     let startY = layout.topBarH + 546;
     const projectedBottom = startY + (rowCount - 1) * buttonGapY + buttonHeight / 2;
 
@@ -559,7 +512,7 @@ export class KioskScene extends Phaser.Scene {
       startY -= projectedBottom - maxGridBottom;
     }
 
-    DESTINATION_POOL.forEach((destination, index) => {
+    this.activeDestinations.forEach((destination, index) => {
       const row = Math.floor(index / columns);
       const col = index % columns;
       const x = startX + col * (buttonWidth + buttonGapX);
@@ -574,36 +527,10 @@ export class KioskScene extends Phaser.Scene {
         activeColor: 0x365c61,
         strokeColor: 0xa78457,
         textColor: '#ebe0cb',
-        onClick: () => this.selectDestination(destination)
+        onClick: () => this.handleDestinationChoice(destination)
       });
       this.destinationButtons[destination.id] = button;
     });
-  }
-
-  private selectDestination(destination: DestinationDefinition): void {
-    this.selectedDestinationId = destination.id;
-    this.updateDestinationButtonStates();
-    this.updateSelectionText();
-  }
-
-  private updateSelectionText(): void {
-    if (!this.selectedDestinationId) {
-      this.selectionText.setText(t('kiosk.selectedRouteNone'));
-      return;
-    }
-
-    const destination = this.getDestinationById(this.selectedDestinationId);
-    if (!destination) {
-      this.selectionText.setText(t('kiosk.selectedRouteNone'));
-      return;
-    }
-
-    this.selectionText.setText(
-      t('kiosk.selectedRouteValue', {
-        route: this.getLocalizedDestinationLabel(destination),
-        code: destination.code
-      })
-    );
   }
 
   private spawnNextPassenger(): void {
@@ -611,23 +538,22 @@ export class KioskScene extends Phaser.Scene {
 
     const passenger = Phaser.Utils.Array.GetRandom(PASSENGER_PROFILES);
     this.currentPassenger = passenger;
-    this.selectedDestinationId = null;
-    this.updateDestinationButtonStates();
-    this.updateSelectionText();
+    this.activeDestinations = this.buildDestinationOptions(passenger.destinationCountryId, 6);
+    this.createDestinationButtons();
 
-    this.customerName.setText(passenger.name);
-    this.customerLine.setText(`"${passenger.speech}"`);
+    this.customerName.setText(passenger.person.name);
+    this.customerLine.setText(`"${passenger.person.speech}"`);
     this.customerName.setColor('#f1f6ff');
     this.customerLine.setColor('#d7e3f8');
 
-    const accentColor = this.resolveAccentColor(passenger.card.accentColor, 0x82b0e8);
+    const accentColor = this.resolveAccentColor(passenger.accentColor, 0x82b0e8);
     this.dialogueAccent.setFillStyle(accentColor, 0.58);
     this.namePlate.setFillStyle(0x12243d, 0.92);
 
-    this.caseFileText.setText(t('kiosk.caseFile', { caseId: passenger.id.toUpperCase() }));
-    this.routingBrief.setText(t('kiosk.routingInstructions'));
+    this.caseFileText.setText(t('kiosk.passengerProfile'));
+    this.routingBrief.setText(this.formatPassengerSummary(passenger));
     this.passengerCardText.setText(this.formatPassengerCard(passenger));
-    this.passengerIndicatorsText.setText(this.formatPassengerIndicators(passenger));
+    this.renderRouteCard(passenger);
     this.feedbackText.setText('');
     this.feedbackText.setAlpha(1);
 
@@ -813,31 +739,16 @@ export class KioskScene extends Phaser.Scene {
     this.time.delayedCall(460, () => this.startCustomerIdleAnimation());
   }
 
-  private updateDestinationButtonStates(): void {
-    DESTINATION_POOL.forEach((destination) => {
-      const button = this.destinationButtons[destination.id];
-      if (button) {
-        button.setActiveState(this.selectedDestinationId === destination.id);
-      }
-    });
-  }
-
-  private handleDispatch(): void {
+  private handleDestinationChoice(destination: DestinationDefinition): void {
     if (!this.currentPassenger) {
-      return;
-    }
-
-    if (!this.selectedDestinationId) {
-      this.feedback(t('kiosk.chooseBeforeDispatch'), false);
       return;
     }
 
     this.currentPassengerTimer?.remove();
 
     const passenger = this.currentPassenger;
-    const destination = this.getDestinationById(this.selectedDestinationId);
 
-    if (this.selectedDestinationId === passenger.destinationId) {
+    if (destination.id === passenger.destinationCountryId) {
       this.money += passenger.reward;
       this.processedPassengers += 1;
       this.correctRoutes += 1;
@@ -936,23 +847,74 @@ export class KioskScene extends Phaser.Scene {
     return DESTINATION_POOL.find((destination) => destination.id === id);
   }
 
-  private formatPassengerCard(passenger: PassengerProfile): string {
-    const fields = passenger.card.fields
-      .map((field) => `${translateDataText(field.label)}: ${translateDataText(field.value)}`)
-      .join('\n');
-    return `${translateDataText(passenger.card.title)}\n${fields}`;
+  private buildDestinationOptions(correctDestinationId: string, count: number): DestinationDefinition[] {
+    const correctDestination = this.getDestinationById(correctDestinationId);
+    if (!correctDestination) {
+      return [];
+    }
+
+    const decoys = Phaser.Utils.Array.Shuffle(
+      DESTINATION_POOL.filter((destination) => destination.id !== correctDestinationId)
+    ).slice(0, Math.max(0, count - 1));
+
+    return Phaser.Utils.Array.Shuffle([correctDestination, ...decoys]);
   }
 
-  private formatPassengerIndicators(passenger: PassengerProfile): string {
+  private formatPassengerCard(passenger: PassengerProfile): string {
     return [
-      `${translateDataText(passenger.symbol.label)}: ${translateDataText(passenger.symbol.value)}`,
-      `${translateDataText(passenger.mark.label)}: ${translateDataText(passenger.mark.value)}`,
-      t('kiosk.routingNote')
+      `${translateDataText('Document')}: ${translateDataText(passenger.routing.documentText)}`,
+      `${translateDataText('Declared route')}: ${translateDataText(passenger.routing.declaredRoute)}`,
+      `${translateDataText('Language tag')}: ${translateDataText(passenger.routing.languageTag)}`,
+      `${translateDataText('Symbol')}: ${translateDataText(passenger.routing.symbol)}`,
+      `${translateDataText('Mark')}: ${translateDataText(passenger.routing.mark)}`
+    ].join('\n');
+  }
+
+  private formatPassengerSummary(passenger: PassengerProfile): string {
+    const originCountry = this.getLocalizedCountryName(passenger.summary.originCountryId);
+    const passportCountry = passenger.summary.passportCountryId
+      ? this.getLocalizedCountryName(passenger.summary.passportCountryId)
+      : t('kiosk.passportMissing');
+
+    return [
+      `${t('kiosk.originCountry')}: ${originCountry}`,
+      `${t('kiosk.passportCountry')}: ${passportCountry}`,
+      `${t('kiosk.spokenLanguage')}: ${translateDataText(passenger.summary.spokenLanguage)}`
     ].join('\n');
   }
 
   private getLocalizedDestinationLabel(destination: DestinationDefinition): string {
     return translateDestination(destination.id, destination.label);
+  }
+
+  private getLocalizedCountryName(countryId: string): string {
+    const destination = this.getDestinationById(countryId);
+    return destination ? this.getLocalizedDestinationLabel(destination) : countryId.toUpperCase();
+  }
+
+  private renderRouteCard(passenger: PassengerProfile): void {
+    if (passenger.routeCard.mode === 'flag' && passenger.routeCard.flagCountryCode) {
+      this.routeCardLabelText.setText(t('kiosk.flagClue'));
+      this.destinationFlagText.setText(this.getFlagEmoji(passenger.routeCard.flagCountryCode));
+      this.passengerIndicatorsText.setText('');
+      return;
+    }
+
+    this.routeCardLabelText.setText(translateDataText(passenger.routeCard.hintLabel ?? 'Route code'));
+    this.destinationFlagText.setText('');
+    this.passengerIndicatorsText.setText(translateDataText(passenger.routeCard.hintValue ?? ''));
+  }
+
+  private getFlagEmoji(countryCode: string): string {
+    if (!/^[A-Z]{2}$/i.test(countryCode)) {
+      return '??';
+    }
+
+    return countryCode
+      .toUpperCase()
+      .split('')
+      .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
+      .join('');
   }
 
   private resolveAccentColor(hexColor: string | undefined, fallback: number): number {
