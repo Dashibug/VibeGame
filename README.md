@@ -56,7 +56,7 @@ The player must:
 - identify the correct destination
 - send the traveler to the correct sector
 
-Correct decisions increase score and shift performance.  
+Correct decisions increase shift performance.  
 Incorrect decisions cause strikes.  
 Too many strikes end the shift.
 
@@ -72,7 +72,7 @@ As the game progresses:
 - fictional regions and language patterns
 - increasing difficulty across shifts
 - document and symbol recognition
-- score / strike system
+- accuracy / strike system
 - replayable short sessions
 - atmospheric terminal presentation
 
@@ -98,7 +98,7 @@ The current MVP focuses on:
 - traveler arrival loop
 - clue presentation
 - destination selection
-- score and strike logic
+- accuracy and strike logic
 
 ## Planned Content
 

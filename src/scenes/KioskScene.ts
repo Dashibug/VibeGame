@@ -3,13 +3,13 @@ import { DESTINATION_POOL, PASSENGER_PROFILES } from '../data/customers';
 import { t, translateDataText, translateDestination } from '../i18n';
 import type { DestinationDefinition, PassengerProfile } from '../types';
 import { TextButton } from '../ui/Button';
+import { CharacterFace, type FaceExpression } from '../ui/CharacterFace';
 
 const SHIFT_DURATION_SECONDS = 120;
 const MAX_STRIKES = 3;
 const PASSENGER_TIMEOUT_MS = 20000;
 
 export class KioskScene extends Phaser.Scene {
-  private money = 0;
   private strikes = 0;
   private processedPassengers = 0;
   private correctRoutes = 0;
@@ -21,15 +21,12 @@ export class KioskScene extends Phaser.Scene {
   private passengerIndicatorsText!: Phaser.GameObjects.Text;
   private destinationFlagText!: Phaser.GameObjects.Text;
   private routeCardLabelText!: Phaser.GameObjects.Text;
+  private routeFlagFrame!: Phaser.GameObjects.Rectangle;
   private customerName!: Phaser.GameObjects.Text;
   private customerLine!: Phaser.GameObjects.Text;
   private feedbackText!: Phaser.GameObjects.Text;
   private hudText!: Phaser.GameObjects.Text;
-  private customerSilhouette!: Phaser.GameObjects.Rectangle;
-  private customerContainer!: Phaser.GameObjects.Container;
-  private customerPortrait!: Phaser.GameObjects.Image;
-  private customerHead!: Phaser.GameObjects.Ellipse;
-  private customerShadow!: Phaser.GameObjects.Ellipse;
+  private characterFace!: CharacterFace;
   private dialoguePanel!: Phaser.GameObjects.Rectangle;
   private namePlate!: Phaser.GameObjects.Rectangle;
   private dialogueAccent!: Phaser.GameObjects.Rectangle;
@@ -39,29 +36,15 @@ export class KioskScene extends Phaser.Scene {
   private currentPassenger: PassengerProfile | null = null;
   private activeDestinations: DestinationDefinition[] = [];
   private destinationButtons: Record<string, TextButton> = {};
-  private readonly customerPortraitKeys = [
-    'customer-01',
-    'customer-02',
-    'customer-03',
-    'customer-04',
-    'customer-05',
-    'customer-06'
-  ];
-  private usePortrait = false;
   private currentPassengerTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super('KioskScene');
   }
 
-  preload(): void {
-    this.customerPortraitKeys.forEach((key) => {
-      this.load.image(key, `customers/${key}.svg`);
-    });
-  }
+  preload(): void {}
 
   create(): void {
-    this.money = 0;
     this.strikes = 0;
     this.processedPassengers = 0;
     this.correctRoutes = 0;
@@ -208,39 +191,18 @@ export class KioskScene extends Phaser.Scene {
       color: '#c4b89a'
     }).setOrigin(0.5);
 
-    // Customer silhouette with worn styling
-    const coat = this.add.rectangle(0, 28, 94, 104, wornMetal, 0.94).setStrokeStyle(2, fadedBrass, 0.5);
-    const collar = this.add.rectangle(0, 2, 62, 20, dullGrayBlue, 0.9);
-    const scarf = this.add.rectangle(0, 15, 34, 22, dustyRed, 0.92);
-    this.customerHead = this.add.ellipse(0, -18, 48, 56, wornMetal, 0.98).setStrokeStyle(1, fadedBrass, 0.4);
-    const hat = this.add.rectangle(0, -44, 58, 16, nearBlack, 0.95);
-    const brim = this.add.rectangle(0, -35, 68, 6, wornMetal, 0.9);
-    this.customerShadow = this.add.ellipse(0, 70, 92, 20, nearBlack, 0.3);
-
-    this.customerContainer = this.add.container(windowX, windowY + 32, [
-      this.customerShadow,
-      coat,
-      collar,
-      scarf,
-      this.customerHead,
-      hat,
-      brim
-    ]);
-
-    this.customerPortrait = this.add
-      .image(windowX, windowY + 22, this.customerPortraitKeys[0])
-      .setDisplaySize(130, 170)
-      .setAlpha(0)
-      .setVisible(false);
-
-    this.customerContainer.setDepth(22);
-    this.customerPortrait.setDepth(23);
-    this.customerSilhouette = coat;
+    // Character face stickman
+    this.characterFace = new CharacterFace(this, {
+      x: windowX,
+      y: windowY + 2,
+      scale: 1
+    });
+    this.characterFace.getContainer().setDepth(22);
     this.customerBaseX = windowX;
-    this.customerBaseY = windowY + 12;
+    this.customerBaseY = windowY + 2;
 
     // Console title with institutional styling
-    this.add.text(layout.rightPanelX, layout.topBarH + 32, t('kiosk.consoleTitle'), {
+    this.add.text(layout.rightPanelX, layout.topBarH + 22, t('kiosk.consoleTitle'), {
       fontFamily: 'serif',
       fontSize: '22px',
       color: '#c4b89a'
@@ -282,7 +244,8 @@ export class KioskScene extends Phaser.Scene {
     const leftColumnX = rightPanelLeft + 22 + leftColumnWidth / 2;
     const centerColumnX = leftColumnX + leftColumnWidth / 2 + mainGap + centerColumnWidth / 2;
     const rightColumnX = centerColumnX + centerColumnWidth / 2 + mainGap + rightColumnWidth / 2;
-    const alertY = layout.topBarH + 118;
+    const routeFlagX = rightColumnX - rightColumnWidth / 2 + 64;
+    const routeFlagY = columnsTopY - columnHeight / 2 + 148;
 
     // HUD with institutional styling
     this.hudText = this.add.text(layout.sidePad, 16, '', {
@@ -318,15 +281,6 @@ export class KioskScene extends Phaser.Scene {
       wordWrap: { width: dialogueW - 34 }
     });
 
-    // Alert bar with institutional styling
-    this.add.rectangle(sectionCenterX, alertY, sectionWidth - 42, 34, 0x1a2332, 0.96).setStrokeStyle(1, 0x5a4a3a, 0.6);
-    this.add.rectangle(sectionCenterX, alertY, sectionWidth - 42, 4, 0xb8860b, 0.3);
-    this.add.text(sectionCenterX, alertY, `${t('kiosk.alertManual')}  |  ${t('kiosk.alertQueue')}`, {
-      fontFamily: 'monospace',
-      fontSize: '16px',
-      color: '#b8860b'
-    }).setOrigin(0.5);
-
     // Column panels with layered borders and paper styling
     this.add.rectangle(leftColumnX, columnsTopY, leftColumnWidth, columnHeight, 0x2a3440, 0.9).setStrokeStyle(3, 0x5a4a3a, 0.8);
     this.add.rectangle(leftColumnX, columnsTopY, leftColumnWidth - 8, columnHeight - 8, 0x1a2332, 0.95).setStrokeStyle(2, 0x3a4555, 0.7);
@@ -354,8 +308,9 @@ export class KioskScene extends Phaser.Scene {
 
     this.routeCardLabelText = this.add.text(rightColumnX - rightColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 58, t('kiosk.flagClue'), {
       fontFamily: 'serif',
-      fontSize: '14px',
-      color: '#5f9ea0'
+      fontSize: '17px',
+      color: '#5f9ea0',
+      wordWrap: { width: rightColumnWidth - 72 }
     });
 
     // Passenger summary with institutional styling
@@ -372,22 +327,13 @@ export class KioskScene extends Phaser.Scene {
     this.add.rectangle(centerColumnX, columnsTopY, centerColumnWidth - 52, columnHeight - 52, 0xe8dcc0, 0.9)
       .setStrokeStyle(1, 0x5a4a3a, 0.5);
     this.add.rectangle(centerColumnX, columnsTopY + 2, centerColumnWidth - 120, 4, 0xb8860b, 0.2);
-    this.add.rectangle(centerColumnX + centerColumnWidth / 2 - 76, columnsTopY - columnHeight / 2 + 78, 64, 64, 0x1a2332, 0.2)
-      .setStrokeStyle(1, 0x5a4a3a, 0.4);
-    this.add.circle(centerColumnX + centerColumnWidth / 2 - 54, columnsTopY + columnHeight / 2 - 78, 44, 0x8b4513, 0.15)
-      .setStrokeStyle(2, 0x5a4a3a, 0.6);
+    this.drawDocumentStamp(centerColumnX + centerColumnWidth / 2 - 54, columnsTopY + columnHeight / 2 - 78);
 
     // Route card area
-    this.add.rectangle(rightColumnX - rightColumnWidth / 2 + 64, columnsTopY - 74, 66, 66, 0x1a2332, 0.9)
-      .setStrokeStyle(1, 0x5f9ea0, 0.4);
-
-    // Bottom status bar
-    this.add.rectangle(sectionCenterX, layout.topBarH + 468, sectionWidth, 46, 0x2a3440, 0.96).setStrokeStyle(1, 0x3a4555, 0.6);
-    this.add.text(rightPanelLeft + 20, layout.topBarH + 445, t('kiosk.routeStatus'), {
-      fontFamily: 'monospace',
-      fontSize: '14px',
-      color: '#c4b89a'
-    });
+    this.routeFlagFrame = this.add
+      .rectangle(routeFlagX, routeFlagY, 66, 66, 0x1a2332, 0.9)
+      .setStrokeStyle(1, 0x5f9ea0, 0.4)
+      .setVisible(false);
 
     this.routingBrief = this.add.text(leftColumnX - leftColumnWidth / 2 + 18, columnsTopY - columnHeight / 2 + 58, '', {
       fontFamily: 'serif',
@@ -405,7 +351,7 @@ export class KioskScene extends Phaser.Scene {
     });
     this.passengerCardText.setLineSpacing(4);
 
-    this.destinationFlagText = this.add.text(rightColumnX - rightColumnWidth / 2 + 64, columnsTopY - 74, '', {
+    this.destinationFlagText = this.add.text(routeFlagX, routeFlagY, '', {
       fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
       fontSize: '42px'
     }).setOrigin(0.5);
@@ -426,6 +372,50 @@ export class KioskScene extends Phaser.Scene {
     });
 
     this.refreshHud();
+  }
+
+  private drawDocumentStamp(x: number, y: number): void {
+    const stampColor = 0x9d1d22;
+    const stamp = this.add.graphics();
+
+    stamp.fillStyle(stampColor, 0.05);
+    stamp.fillCircle(x, y, 44);
+    stamp.lineStyle(4, stampColor, 0.72);
+    stamp.strokeCircle(x, y, 44);
+    stamp.lineStyle(2, stampColor, 0.58);
+    stamp.strokeCircle(x, y, 34);
+    stamp.strokeCircle(x, y, 18);
+
+    for (let i = 0; i < 12; i += 1) {
+      const angle = (Math.PI * 2 * i) / 12;
+      const innerX = x + Math.cos(angle) * 22;
+      const innerY = y + Math.sin(angle) * 22;
+      const outerX = x + Math.cos(angle) * 32;
+      const outerY = y + Math.sin(angle) * 32;
+      stamp.lineBetween(innerX, innerY, outerX, outerY);
+    }
+
+    const starPoints = [];
+    for (let i = 0; i < 10; i += 1) {
+      const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 10;
+      const radius = i % 2 === 0 ? 14 : 7;
+      starPoints.push({
+        x: x + Math.cos(angle) * radius,
+        y: y + Math.sin(angle) * radius
+      });
+    }
+    stamp.lineStyle(2, stampColor, 0.68);
+    stamp.strokePoints(starPoints, true, true);
+
+    this.add
+      .text(x, y + 24, 'ROUTE', {
+        fontFamily: 'serif',
+        fontSize: '13px',
+        color: '#9d1d22'
+      })
+      .setOrigin(0.5)
+      .setAlpha(0.68)
+      .setAngle(-8);
   }
 
   private createDestinationButtons(): void {
@@ -494,65 +484,27 @@ export class KioskScene extends Phaser.Scene {
     this.feedbackText.setText('');
     this.feedbackText.setAlpha(1);
 
-    this.usePortrait = Phaser.Math.Between(0, 100) >= 8;
-    const portraitKey = Phaser.Utils.Array.GetRandom(this.customerPortraitKeys);
-    const portraitTexture = this.textures.exists(portraitKey) ? this.textures.get(portraitKey) : null;
-    const sourceImage = portraitTexture?.getSourceImage() as { width?: number; height?: number } | undefined;
-    const portraitReady = Boolean(sourceImage?.width && sourceImage?.height);
+    // Set character face to neutral expression
+    this.characterFace.setExpression('neutral');
 
-    if (this.usePortrait && portraitReady) {
-      this.customerPortrait
-        .setTexture(portraitKey)
-        .setPosition(this.customerBaseX, this.customerBaseY - 6)
-        .setScale(0.96)
-        .setVisible(true)
-        .setAlpha(0);
-      this.customerContainer.setVisible(true).setAlpha(0.38);
-    } else {
-      this.usePortrait = false;
-      this.customerPortrait.setVisible(false).setAlpha(0);
-      this.customerContainer.setVisible(true).setAlpha(1);
-    }
+    this.tweens.killTweensOf(this.characterFace.getContainer());
+    this.characterFace.getContainer().setAlpha(0);
+    this.characterFace.getContainer().setScale(0.97);
+    this.tweens.add({
+      targets: this.characterFace.getContainer(),
+      alpha: 1,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 420,
+      ease: 'Sine.easeOut',
+      onComplete: () => this.startCustomerIdleAnimation()
+    });
 
-    this.tweens.killTweensOf([this.customerContainer, this.customerHead, this.customerShadow, this.customerPortrait]);
-    this.customerContainer.setAlpha(0);
-    this.customerContainer.setScale(0.97);
-    this.customerContainer.setPosition(this.customerBaseX, this.customerBaseY + 12);
-    this.customerHead.setAngle(0);
-    this.customerSilhouette.setFillStyle(0x2d3c52, 0.94);
-    if (this.usePortrait) {
-      this.customerContainer.setPosition(this.customerBaseX, this.customerBaseY);
-      this.tweens.add({
-        targets: this.customerPortrait,
-        alpha: 1,
-        y: this.customerBaseY - 18,
-        scaleX: 1,
-        scaleY: 1,
-        duration: 420,
-        ease: 'Sine.easeOut'
-      });
-      this.tweens.add({
-        targets: this.customerContainer,
-        alpha: 0.5,
-        duration: 240
-      });
-    } else {
-      this.tweens.add({
-        targets: this.customerContainer,
-        alpha: 1,
-        y: this.customerBaseY,
-        scaleX: 1,
-        scaleY: 1,
-        duration: 420,
-        ease: 'Sine.easeOut'
-      });
-    }
     this.tweens.add({
       targets: [this.customerName, this.customerLine, this.dialoguePanel, this.namePlate],
       alpha: { from: 0.65, to: 1 },
       duration: 280
     });
-    this.startCustomerIdleAnimation();
 
     this.currentPassengerTimer = this.time.addEvent({
       delay: PASSENGER_TIMEOUT_MS,
@@ -561,68 +513,36 @@ export class KioskScene extends Phaser.Scene {
           return;
         }
 
-        const timedOutPassenger = this.currentPassenger;
         this.playCustomerReaction('impatient');
         this.registerFail(
           t('kiosk.timeoutFeedback', {
-            penalty: timedOutPassenger.penalty,
-            strike: timedOutPassenger.strikePenalty ?? 1
+            strike: this.currentPassenger.strikePenalty ?? 1
           }),
-          timedOutPassenger.penalty,
-          timedOutPassenger.strikePenalty ?? 1
+          this.currentPassenger.strikePenalty ?? 1
         );
       }
     });
   }
 
   private startCustomerIdleAnimation(): void {
-    if (this.usePortrait) {
-      this.tweens.killTweensOf([this.customerPortrait, this.customerContainer]);
-      this.customerPortrait.clearTint();
-      this.customerPortrait.setPosition(this.customerBaseX, this.customerBaseY - 18);
-      this.customerContainer.setPosition(this.customerBaseX, this.customerBaseY).setAlpha(0.5);
-      this.tweens.add({
-        targets: this.customerPortrait,
-        y: this.customerBaseY - 16,
-        duration: 1750,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-      });
-      this.tweens.add({
-        targets: this.customerPortrait,
-        x: this.customerBaseX + 2,
-        duration: 2100,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-      });
-      this.tweens.add({
-        targets: this.customerContainer,
-        y: this.customerBaseY + 1.5,
-        duration: 1750,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-      });
-      return;
-    }
+    this.tweens.killTweensOf(this.characterFace.getContainer());
+    this.characterFace.getContainer().setPosition(this.customerBaseX, this.customerBaseY);
 
-    this.tweens.killTweensOf([this.customerContainer, this.customerHead]);
-    this.customerContainer.setPosition(this.customerBaseX, this.customerBaseY);
-    this.customerHead.setX(0);
+    // Bobbing animation
     this.tweens.add({
-      targets: this.customerContainer,
-      y: this.customerBaseY + 2,
-      duration: 1750,
+      targets: this.characterFace.getContainer(),
+      y: this.customerBaseY + 3,
+      duration: 2000,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
+
+    // Subtle side-to-side sway
     this.tweens.add({
-      targets: this.customerHead,
-      x: 2,
-      duration: 2100,
+      targets: this.characterFace.getContainer(),
+      x: this.customerBaseX + 2,
+      duration: 2500,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
@@ -630,46 +550,60 @@ export class KioskScene extends Phaser.Scene {
   }
 
   private playCustomerReaction(type: 'satisfied' | 'annoyed' | 'impatient'): void {
-    this.tweens.killTweensOf([this.customerContainer, this.customerHead, this.customerShadow, this.customerPortrait]);
+    this.tweens.killTweensOf(this.characterFace.getContainer());
+
+    let faceExpression: FaceExpression;
+    let shakeCount = 0;
+    let shakeAmount = 0;
+    let scaleAmount = 1;
 
     if (type === 'satisfied') {
-      this.customerSilhouette.setFillStyle(0x325744, 0.95);
+      faceExpression = 'happy';
+      shakeAmount = 2;
+      shakeCount = 2;
+      scaleAmount = 1.15;
       this.dialogueAccent.setFillStyle(0x86d9b1, 0.6);
       this.namePlate.setFillStyle(0x17322d, 0.92);
       this.customerLine.setColor('#d9f1e5');
-      if (this.usePortrait) {
-        this.customerPortrait.setTint(0xb7ffd8);
-        this.tweens.add({ targets: this.customerPortrait, y: this.customerPortrait.y + 5, duration: 110, yoyo: true, repeat: 1 });
-        this.tweens.add({ targets: this.customerPortrait, x: this.customerBaseX + 2, duration: 130, yoyo: true, repeat: 1 });
-      } else {
-        this.tweens.add({ targets: this.customerHead, y: this.customerHead.y + 5, duration: 110, yoyo: true, repeat: 1 });
-        this.tweens.add({ targets: this.customerContainer, x: this.customerBaseX + 2, duration: 130, yoyo: true, repeat: 1 });
-      }
     } else if (type === 'annoyed') {
-      this.customerSilhouette.setFillStyle(0x5b3642, 0.95);
+      faceExpression = 'angry';
+      shakeAmount = 5;
+      shakeCount = 4;
       this.dialogueAccent.setFillStyle(0xd19aa0, 0.62);
       this.namePlate.setFillStyle(0x381f2b, 0.92);
       this.customerLine.setColor('#f0d7dc');
-      if (this.usePortrait) {
-        this.customerPortrait.setTint(0xffc0c0);
-        this.tweens.add({ targets: this.customerPortrait, x: this.customerBaseX + 4, duration: 70, yoyo: true, repeat: 3 });
-        this.tweens.add({ targets: this.customerPortrait, angle: 3, duration: 90, yoyo: true, repeat: 3 });
-      } else {
-        this.tweens.add({ targets: this.customerContainer, x: this.customerBaseX + 4, duration: 70, yoyo: true, repeat: 3 });
-        this.tweens.add({ targets: this.customerHead, angle: 3, duration: 90, yoyo: true, repeat: 3 });
-      }
     } else {
-      this.customerSilhouette.setFillStyle(0x4d4854, 0.95);
+      faceExpression = 'tired';
+      shakeAmount = 3;
+      shakeCount = 3;
       this.dialogueAccent.setFillStyle(0xb3b7d8, 0.58);
       this.namePlate.setFillStyle(0x262b45, 0.92);
       this.customerLine.setColor('#e2e6f7');
-      if (this.usePortrait) {
-        this.customerPortrait.setTint(0xddd8ff);
-        this.tweens.add({ targets: this.customerPortrait, scaleX: 1.04, duration: 120, yoyo: true, repeat: 2 });
-        this.tweens.add({ targets: this.customerPortrait, y: this.customerPortrait.y - 2, duration: 110, yoyo: true, repeat: 2 });
-      } else {
-        this.tweens.add({ targets: this.customerShadow, scaleX: 1.08, duration: 120, yoyo: true, repeat: 2 });
-        this.tweens.add({ targets: this.customerContainer, y: this.customerBaseY - 2, duration: 110, yoyo: true, repeat: 2 });
+    }
+
+    this.characterFace.setExpression(faceExpression);
+
+    // Shake and scale reaction animation
+    if (shakeCount > 0) {
+      this.tweens.add({
+        targets: this.characterFace.getContainer(),
+        x: this.customerBaseX + shakeAmount,
+        duration: 60,
+        yoyo: true,
+        repeat: shakeCount,
+        ease: 'Linear'
+      });
+
+      if (scaleAmount !== 1) {
+        this.tweens.add({
+          targets: this.characterFace.getContainer(),
+          scaleX: scaleAmount,
+          scaleY: scaleAmount,
+          duration: 100,
+          yoyo: true,
+          repeat: shakeCount - 1,
+          ease: 'Quad.easeInOut'
+        });
       }
     }
 
@@ -686,14 +620,12 @@ export class KioskScene extends Phaser.Scene {
     const passenger = this.currentPassenger;
 
     if (destination.id === passenger.destinationCountryId) {
-      this.money += passenger.reward;
       this.processedPassengers += 1;
       this.correctRoutes += 1;
       this.playCustomerReaction('satisfied');
       this.feedback(
         t('kiosk.successFeedback', {
-          route: destination ? this.getLocalizedDestinationLabel(destination) : t('kiosk.targetRoute'),
-          reward: passenger.reward
+          route: destination ? this.getLocalizedDestinationLabel(destination) : t('kiosk.targetRoute')
         }),
         true
       );
@@ -712,16 +644,13 @@ export class KioskScene extends Phaser.Scene {
     this.registerFail(
       t('kiosk.failFeedback', {
         route: destination ? this.getLocalizedDestinationLabel(destination) : t('kiosk.routeUnknown'),
-        penalty: passenger.penalty,
         strike: passenger.strikePenalty ?? 1
       }),
-      passenger.penalty,
       passenger.strikePenalty ?? 1
     );
   }
 
-  private registerFail(message: string, penalty: number, strikePenalty: number): void {
-    this.money = Math.max(0, this.money - penalty);
+  private registerFail(message: string, strikePenalty: number): void {
     this.strikes += strikePenalty;
     this.processedPassengers += 1;
     this.refreshHud();
@@ -751,7 +680,6 @@ export class KioskScene extends Phaser.Scene {
     this.hudText.setText(
       t('kiosk.hud', {
         time: this.shiftTimeLeft,
-        money: this.money,
         correct: this.correctRoutes,
         processed: this.processedPassengers,
         strikes: this.strikes,
@@ -770,10 +698,8 @@ export class KioskScene extends Phaser.Scene {
     this.cameras.main.fadeOut(240, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('EndScene', {
-        score: this.money,
         servedCustomers: this.processedPassengers,
         strikes: this.strikes,
-        money: this.money,
         processedPassengers: this.processedPassengers,
         correctRoutes: this.correctRoutes
       });
@@ -832,12 +758,14 @@ export class KioskScene extends Phaser.Scene {
   private renderRouteCard(passenger: PassengerProfile): void {
     if (passenger.routeCard.mode === 'flag' && passenger.routeCard.flagCountryCode) {
       this.routeCardLabelText.setText(t('kiosk.flagClue'));
+      this.routeFlagFrame.setVisible(true);
       this.destinationFlagText.setText(this.getFlagEmoji(passenger.routeCard.flagCountryCode));
       this.passengerIndicatorsText.setText('');
       return;
     }
 
     this.routeCardLabelText.setText(translateDataText(passenger.routeCard.hintLabel ?? 'Route code'));
+    this.routeFlagFrame.setVisible(false);
     this.destinationFlagText.setText('');
     this.passengerIndicatorsText.setText(translateDataText(passenger.routeCard.hintValue ?? ''));
   }

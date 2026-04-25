@@ -77,16 +77,12 @@ export interface PassengerProfile {
   routing: PassengerRoutingClues;
   routeCard: PassengerRouteCard;
   accentColor?: string;
-  reward: number;
-  penalty: number;
   strikePenalty?: number;
 }
 
 export interface EndShiftData {
-  score: number;
   servedCustomers: number;
   strikes: number;
-  money?: number;
   processedPassengers?: number;
   correctRoutes?: number;
 }

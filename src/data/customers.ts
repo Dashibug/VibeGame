@@ -489,6 +489,13 @@ const DOCUMENT_PATTERNS = [
   'Embassy note {code}-{digits}'
 ];
 
+const DOCUMENT_PATTERNS_WITHOUT_COUNTRY_CODE = [
+  'Passport {digits}',
+  'Transit visa {digits}',
+  'Crew booklet {digits}',
+  'Embassy note {digits}'
+];
+
 const MISSING_DOCUMENT_PATTERNS = [
   'No passport attached',
   'Document missing, route note only',
@@ -510,10 +517,31 @@ const MARK_PATTERNS = [
   '{prefix}corridor stamp'
 ];
 
+const DESTINATION_AIRPORT_HINT_LABEL = 'Destination airport';
+
+const DESTINATION_AIRPORTS_BY_CODE: Record<string, string> = {
+  AE: 'Dubai International Airport',
+  AU: 'Sydney Kingsford Smith Airport',
+  BR: 'Sao Paulo Guarulhos Airport',
+  CA: 'Toronto Pearson Airport',
+  CN: 'Beijing Capital Airport',
+  DE: 'Frankfurt Airport',
+  ES: 'Madrid-Barajas Airport',
+  FR: 'Charles de Gaulle Airport',
+  GB: 'Heathrow Airport',
+  IN: 'Indira Gandhi International Airport',
+  IT: 'Leonardo da Vinci-Fiumicino Airport',
+  JP: 'Tokyo Haneda Airport',
+  KR: 'Incheon International Airport',
+  MN: 'Chinggis Khaan International Airport',
+  TR: 'Istanbul Airport',
+  US: 'John F. Kennedy Airport'
+};
+
 const ROUTE_CARD_GENERIC_HINTS = [
   {
-    label: 'Terminal code',
-    buildValue: (_code: string, seed: number) => `TERM-${String.fromCharCode(65 + (seed % 5))}${(seed % 8) + 1}`
+    label: DESTINATION_AIRPORT_HINT_LABEL,
+    buildValue: (code: string) => getDestinationAirportName(code)
   },
   {
     label: 'Corridor label',
@@ -691,16 +719,22 @@ function createDocumentValue(culture: CultureProfile, variant: number, seed: num
   });
 }
 
-function createDocumentText(passportCountryId: string | null, seed: number): string {
+function createDocumentText(passportCountryId: string | null, seed: number, includeCountryCode: boolean): string {
   if (!passportCountryId) {
     return pick(MISSING_DOCUMENT_PATTERNS, seed);
   }
 
   const digits = 10000 + (seed % 90000);
-  return formatPattern(pick(DOCUMENT_PATTERNS, seed + 3), {
+  const pattern = includeCountryCode ? pick(DOCUMENT_PATTERNS, seed + 3) : pick(DOCUMENT_PATTERNS_WITHOUT_COUNTRY_CODE, seed + 3);
+
+  return formatPattern(pattern, {
     code: passportCountryId.toUpperCase(),
     digits
   });
+}
+
+function shouldRevealConsoleCountryCode(seed: number): boolean {
+  return seed % 10 === 0;
 }
 
 function createDeclaredRoute(destination: DestinationDefinition, seed: number, includeCountryCode: boolean): string {
@@ -737,6 +771,10 @@ function buildRouteCard(destination: DestinationDefinition, seed: number): Passe
   };
 }
 
+function getDestinationAirportName(code: string): string {
+  return DESTINATION_AIRPORTS_BY_CODE[code] ?? `${REGION_NAMES.of(code) ?? code} International Airport`;
+}
+
 function validateCaseSolvable(passenger: PassengerProfile): boolean {
   const destinationCode = passenger.destinationCountryId.toUpperCase();
   let strongClueCount = 0;
@@ -752,11 +790,13 @@ function validateCaseSolvable(passenger: PassengerProfile): boolean {
   }
   if (passenger.routeCard.mode === 'flag') {
     strongClueCount += 1;
+  } else if (passenger.routeCard.hintLabel === DESTINATION_AIRPORT_HINT_LABEL) {
+    strongClueCount += 1;
   } else if (passenger.routeCard.hintValue?.includes(destinationCode)) {
     strongClueCount += 1;
   }
 
-  return strongClueCount >= 2;
+  return strongClueCount >= 1;
 }
 
 function buildPassenger(destination: DestinationDefinition, variant: number, destinationIndex: number): PassengerProfile {
@@ -764,17 +804,13 @@ function buildPassenger(destination: DestinationDefinition, variant: number, des
   const truth = createHiddenTruth(destination, seed + variant * 13);
   const cardTitle = pick(CARD_TITLES, seed + 23);
   const routeCard = buildRouteCard(destination, seed + 29);
-  let includeRouteCountryCode = (seed + 31) % 2 === 0;
-  let includeSymbolCountryCode = (seed + 37) % 2 === 0;
-  let includeMarkCountryCode = (seed + 41) % 2 === 0;
-
-  // If there is no flag on the route card, keep at least one strong routing clue tied to the destination code.
-  if (routeCard.mode === 'hint' && !includeRouteCountryCode && !includeSymbolCountryCode && !includeMarkCountryCode) {
-    includeRouteCountryCode = true;
-  }
+  const includeConsoleCountryCode = shouldRevealConsoleCountryCode(seed);
+  const includeRouteCountryCode = includeConsoleCountryCode;
+  const includeSymbolCountryCode = includeConsoleCountryCode;
+  const includeMarkCountryCode = includeConsoleCountryCode;
 
   const routing = {
-    documentText: createDocumentText(truth.passportCountryId, seed + 5),
+    documentText: createDocumentText(truth.passportCountryId, seed + 5, includeConsoleCountryCode),
     declaredRoute: createDeclaredRoute(destination, seed + 7, includeRouteCountryCode),
     languageTag: truth.speechCulture.language,
     symbol: createIndicatorValue(SYMBOL_PATTERNS, destination, seed + 11, includeSymbolCountryCode),
@@ -800,16 +836,14 @@ function buildPassenger(destination: DestinationDefinition, variant: number, des
     routing,
     routeCard,
     accentColor: variant === 0 ? truth.nameCulture.accentColor : truth.speechCulture.accentColor,
-    reward: 11 + (seed % 6),
-    penalty: 4 + (seed % 5),
     strikePenalty: 1
   };
 
   if (!validateCaseSolvable(passenger)) {
     passenger.routeCard = {
       mode: 'hint',
-      hintLabel: 'Route code',
-      hintValue: `${destination.code}-SAFE`
+      hintLabel: DESTINATION_AIRPORT_HINT_LABEL,
+      hintValue: getDestinationAirportName(destination.code)
     };
   }
 

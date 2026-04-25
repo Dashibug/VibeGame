@@ -10,7 +10,6 @@ export class EndScene extends Phaser.Scene {
 
   create(data: EndShiftData): void {
     const { width, height } = this.scale;
-    const money = data.money ?? data.score;
     const processedPassengers = data.processedPassengers ?? data.servedCustomers;
     const correctRoutes = data.correctRoutes ?? Math.max(0, processedPassengers - data.strikes);
     const accuracy = processedPassengers > 0 ? Math.round((correctRoutes / processedPassengers) * 100) : 0;
@@ -48,11 +47,10 @@ export class EndScene extends Phaser.Scene {
       color: '#f1d7a0'
     };
 
-    this.add.text(width / 2, 220, t('end.creditsEarned', { money }), statStyle).setOrigin(0.5);
-    this.add.text(width / 2, 265, t('end.passengersProcessed', { count: processedPassengers }), statStyle).setOrigin(0.5);
-    this.add.text(width / 2, 310, t('end.correctRoutes', { count: correctRoutes }), statStyle).setOrigin(0.5);
-    this.add.text(width / 2, 355, t('end.strikes', { count: data.strikes }), statStyle).setOrigin(0.5);
-    this.add.text(width / 2, 396, t('end.routingAccuracy', { accuracy }), accentStyle).setOrigin(0.5);
+    this.add.text(width / 2, 235, t('end.passengersProcessed', { count: processedPassengers }), statStyle).setOrigin(0.5);
+    this.add.text(width / 2, 285, t('end.correctRoutes', { count: correctRoutes }), statStyle).setOrigin(0.5);
+    this.add.text(width / 2, 335, t('end.strikes', { count: data.strikes }), statStyle).setOrigin(0.5);
+    this.add.text(width / 2, 386, t('end.routingAccuracy', { accuracy }), accentStyle).setOrigin(0.5);
 
     new TextButton(this, width / 2 - 130, 470, t('end.restartShift'), {
       width: 220,
