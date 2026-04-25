@@ -527,7 +527,7 @@ const ROUTE_CARD_GENERIC_HINTS = [
     label: 'Entry seal',
     buildValue: (_code: string, seed: number) => `inbound seal ${(seed % 6) + 1}`
   }
-] as const;
+];
 
 interface GeneratedCaseTruth {
   destination: DestinationDefinition;
